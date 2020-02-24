@@ -1,6 +1,7 @@
 package com.example.rabbitmq.producer.service.impl;
 
 import com.example.rabbitmq.producer.service.RabbitMqSendMessageService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -28,6 +29,7 @@ public class RabbitMqSendMessageServiceImpl implements RabbitMqSendMessageServic
 
 	@Override
 	public void sendMessage(String routingKey, String message){
+		Assert.isTrue(StringUtils.isNotEmpty(routingKey)&&StringUtils.isNotEmpty(message),"routingKey或者message不能为空");
 		rabbitTemplate.convertAndSend(routingKey,message);
 	}
 }

@@ -5,5 +5,12 @@ spring:
     active: local
 logging:
   level:
-    web: debug
-    amqp: debug
+    org:
+      springframework:
+        amqp: debug
+    com:
+      rabbitmq: debug
+  file:
+    path: D:/Files/logs/rabbit-producer.log
+  pattern:
+    file: '%d{yyyy-MMM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{15} - %msg%n'
