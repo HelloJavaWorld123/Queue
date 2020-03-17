@@ -3,8 +3,9 @@ spring:
     host: 127.0.0.1
     port: 5672
     username: all_virtual_host_admin
+#    username: admin
     password: root
-    virtual-host: /
+    virtual-host: virtual_host_test
     requested-heartbeat: 30
     connection-timeout: 30000
     publisher-returns: true
@@ -25,7 +26,7 @@ spring:
       #mandatory: true
     cache:
       connection:
-        mode: channel
+        mode: connection
         size: 10
       channel:
         size: 10

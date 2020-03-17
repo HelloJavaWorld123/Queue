@@ -1,14 +1,16 @@
 package com.example.rabbitmq.producer.config;
 
-import com.example.rabbitmq.producer.ProducerApplication;
 import com.example.rabbitmq.producer.enums.RabbitMqEnum;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.BackgroundPreinitializer;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -24,18 +26,22 @@ import java.util.Objects;
  * Date : 2020/2/21 14:15
  * Desc:
  */
+@EnableRabbit
 @Configuration
 @EnableConfigurationProperties(RabbitProperties.class)
 public class RabbitMqConfig{
 
-	@Autowired
-	private RabbitProperties properties;
+	private final RabbitProperties properties;
 
-	@Autowired
-	private CustomerChannelListener customerChannelListener;
+	private final CustomerChannelListener customerChannelListener;
 
-	@Autowired
-	private CustomerConnectionListener customerConnectionListener;
+	private final CustomerConnectionListener customerConnectionListener;
+
+	public RabbitMqConfig(RabbitProperties properties, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener){
+		this.properties = properties;
+		this.customerChannelListener = customerChannelListener;
+		this.customerConnectionListener = customerConnectionListener;
+	}
 
 	@Bean(initMethod = "start",destroyMethod = "destroy")
 	@ConditionalOnMissingBean(value = RabbitTemplate.class)
@@ -61,6 +67,7 @@ public class RabbitMqConfig{
 		factory.addChannelListener(customerChannelListener);
 		//添加自定义的connection的监听器
 		factory.addConnectionListener(customerConnectionListener);
+		factory.setConnectionLimit(10);
 
 		factory.afterPropertiesSet();
 		return factory;
@@ -104,7 +111,13 @@ public class RabbitMqConfig{
 	@Bean
 	@ConditionalOnMissingBean(value = RabbitAdmin.class)
 	public RabbitAdmin rabbitAdmin() throws Exception{
-		return new RabbitAdmin(cachingConnectionFactory());
+		RabbitAdmin admin = new RabbitAdmin(cachingConnectionFactory());
+		admin.setAutoStartup(true);
+		admin.declareExchange(directExchange());
+		admin.declareQueue(queue());
+		admin.declareBinding(binding());
+		admin.afterPropertiesSet();
+		return admin;
 	}
 
 

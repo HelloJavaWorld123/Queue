@@ -1,0 +1,24 @@
+spring:
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: admin
+    password: root
+    virtual-host: /
+    requested-heartbeat: 10
+    #设置多大是合理的？？？
+    connection-timeout: 100
+    cache:
+      connection:
+        mode: channel
+    template:
+      retry:
+        enabled: true
+        max-attempts: 3
+        initial-interval: 1000
+        max-interval: 10000
+        #递增的倍数
+        multiplier: 2
+    listener:
+      direct:
+        auto-startup: true

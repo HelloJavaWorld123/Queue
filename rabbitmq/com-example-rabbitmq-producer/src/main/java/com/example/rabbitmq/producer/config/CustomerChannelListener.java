@@ -15,10 +15,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class CustomerChannelListener extends AbstractConfig implements ShutDownChannelListener{
 
+	@Override
 	public void onCreate(Channel channel, boolean transactional){
 		LOGGER.info("--------RabbitMq 创建 Channel :{}, 是否有事务：{}----",channel,transactional);
 	}
 
+	@Override
 	public void onShutDown(ShutdownSignalException signal){
 		//signal.isHardError() --- true 的话 是指connection 关闭;false得话是指channel关闭
 		LOGGER.info("接收到ShutDown信号：{}",signal.getLocalizedMessage());

@@ -13,14 +13,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class CustomerConnectionListener extends AbstractConfig implements ConnectionListener{
 
+	@Override
 	public void onCreate(Connection connection){
-		LOGGER.info("在：{}成功创建链接,是否打开：{}",connection.getLocalPort(),connection.isOpen());
+		LOGGER.info("创建的链接信息是：{}",connection.toString());
 	}
 
+	@Override
 	public void onClose(Connection connection){
 		LOGGER.info("在：{},链接关闭：{}",connection.getLocalPort(),connection);
 	}
 
+	@Override
 	public void onShutDown(ShutdownSignalException signal){
 		LOGGER.info("强制关闭了一个链接或者通道：{}",signal.getLocalizedMessage());
 	}

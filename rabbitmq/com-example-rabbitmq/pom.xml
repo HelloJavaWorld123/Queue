@@ -18,6 +18,7 @@
 
     <properties>
         <java.version>1.8</java.version>
+        <project.encoding>UTF-8</project.encoding>
         <commons.lang3.version>3.9</commons.lang3.version>
         <commons.collections4.version>4.4</commons.collections4.version>
     </properties>
@@ -49,6 +50,15 @@
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <encoding>${project.encoding}</encoding>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
