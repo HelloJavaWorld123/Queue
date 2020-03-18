@@ -44,13 +44,17 @@
         25. sslContextFactory -- 
         26. channelRpcTimeOut -- 默认值:10min
         27. 
-    二.Exchange:
-    三.Queue:
-    四.Bingding:
+    二.ExchangeInfo:
+    三.QueueInfo:
+    四.BingdingInfo:
+    五.NodeInfo:
+    六.UserInfo:
+    七.VhostInfo:
+    八.ChannelInfo:
+    九.ConnectionInfo:
 # Spring
     CacheConnectionFactory
         1. org.springframework.amqp.rabbit.connection.CachingConnectionFactory.newRabbitConnectionFactory -- 创建了Rabbit ConnectionFactory,并将AutomicRecovery设置为False
-   
 - RabbitTemplate
 
       1.1
@@ -70,7 +74,25 @@
       1.1
 - RabbitAdmin
 
-      1.1
+      1.Exchange
+        1.1. DirectExchange -- 
+        1.2. FanoutExchange --
+        1.3. TopicExchange --
+        1.4. HeadersExchange -- 
+        1.5. CustomerExchange -- 
+      2.Binding:
+      3.Queue:
+        3.1. name -- Queue 的名称
+        3.2. durable -- Queue是否持久化.(在Server关机或者意外情况下,Queue会被持久化)
+        3.3. exclusive -- 队列的性质.是否只能被声明Queue的Connection使用;
+        3.4. autoDelete -- 当队列很长时间不再使用时,Server是否自动删除. 时间是多长???
+        3.5. actualName -- 如果name不为空,则使用name的值.否则使用:spring.gen-UUID_awaiting_declaration.(参考:org.springframework.amqp.core.Base64UrlNamingStrategy.generateName)
+- @RabbitListener
+- @RabbitListeners
+- @RabbitHandler
+- @PayLoad
+- @Header
+
 # QA
 
     1. 启动时不会检查配置的有效性？

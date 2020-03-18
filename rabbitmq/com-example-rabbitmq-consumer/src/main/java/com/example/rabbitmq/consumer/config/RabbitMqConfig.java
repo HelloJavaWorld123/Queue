@@ -1,6 +1,8 @@
 package com.example.rabbitmq.consumer.config;
 
+import com.example.rabbit.common.enums.RabbitMqEnum;
 import com.rabbitmq.client.ConnectionFactory;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -105,7 +107,7 @@ public class RabbitMqConfig{
 		return retryTemplate;
 	}
 
-	@Bean()
+	@Bean
 	@ConditionalOnMissingBean(RabbitTemplate.class)
 	public RabbitTemplate rabbitTemplate(RetryTemplate retryTemplate,CachingConnectionFactory factory){
 		RabbitTemplate rabbitTemplate = new RabbitTemplate();
@@ -117,9 +119,28 @@ public class RabbitMqConfig{
 	}
 
 	@Bean
-	public RabbitAdmin rabbitAdmin(RabbitTemplate rabbitTemplate){
+	public DirectExchange directExchange(){
+		return new DirectExchange(RabbitMqEnum.ExchangeEnum.TEST_DIRECT_EXCHANGE.name(),true,false);
+	}
+
+	@Bean
+	public Queue queue(){
+		return new Queue(RabbitMqEnum.QueueEnum.TEST_QUEUE.name(),true,false,false);
+	}
+
+	@Bean
+	public Binding binding(){
+		return BindingBuilder.bind(queue()).to(directExchange()).with(RabbitMqEnum.RoutingKey.TEST_ROUTING_KEY.name());
+	}
+
+
+	@Bean
+	public RabbitAdmin rabbitAdmin(RabbitTemplate rabbitTemplate, DirectExchange directExchange,Queue queue,Binding binding){
 		RabbitAdmin admin = new RabbitAdmin(rabbitTemplate);
 		admin.setAutoStartup(Boolean.TRUE);
+		admin.declareExchange(directExchange);
+		admin.declareQueue(queue);
+		admin.declareBinding(binding);
 		admin.afterPropertiesSet();
 		return admin;
 	}

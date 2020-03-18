@@ -1,4 +1,11 @@
 server:
   port: 18802
 logging:
-  level: debug
+  level:
+    org:
+      springframework:
+        retry: debug
+        amqp: debug
+        transaction: debug
+    com:
+      rabbitmq: debug
