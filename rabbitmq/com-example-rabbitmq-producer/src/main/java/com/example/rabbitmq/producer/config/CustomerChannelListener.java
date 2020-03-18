@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
  * @author : RXK
  * Date : 2020/2/21 16:09
  * Desc: 监听RabbitMq channel创建于销毁的监听器
+ * 采用 kafka 发送到日志平台 进行采集
  */
 @Component
 public class CustomerChannelListener extends AbstractConfig implements ShutDownChannelListener{

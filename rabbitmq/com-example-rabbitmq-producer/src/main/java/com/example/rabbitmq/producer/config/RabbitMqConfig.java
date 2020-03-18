@@ -5,6 +5,7 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
@@ -12,13 +13,18 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.boot.autoconfigure.amqp.RabbitRetryTemplateCustomizer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.RetryPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 
 import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.Objects;
 
 /**
@@ -43,12 +49,16 @@ public class RabbitMqConfig{
 		this.customerConnectionListener = customerConnectionListener;
 	}
 
-	@Bean(initMethod = "start",destroyMethod = "destroy")
+	@Bean(initMethod = "start",
+	      destroyMethod = "destroy")
 	@ConditionalOnMissingBean(value = RabbitTemplate.class)
-	public RabbitTemplate rabbitTemplate(CachingConnectionFactory cachingConnectionFactory){
+	public RabbitTemplate rabbitTemplate(CachingConnectionFactory cachingConnectionFactory,RetryTemplate retryTemplate){
 		RabbitTemplate rabbitTemplate = new RabbitTemplate();
 		rabbitTemplate.setEncoding("UTF-8");
 		rabbitTemplate.setConnectionFactory(cachingConnectionFactory);
+
+		//set RetryRabbitTemplate
+		rabbitTemplate.setRetryTemplate(retryTemplate);
 		rabbitTemplate.afterPropertiesSet();
 		return rabbitTemplate;
 	}
@@ -92,12 +102,12 @@ public class RabbitMqConfig{
 
 	@Bean
 	public DirectExchange directExchange(){
-		return new DirectExchange(RabbitMqEnum.ExchangeEnum.TEST_DIRECT_EXCHANGE.name(),Boolean.TRUE,Boolean.FALSE);
+		return new DirectExchange(RabbitMqEnum.ExchangeEnum.TEST_DIRECT_EXCHANGE.name(), Boolean.TRUE, Boolean.FALSE);
 	}
 
 	@Bean
 	public Queue queue(){
-		return new Queue(RabbitMqEnum.QueueEnum.TEST_QUEUE.name(),Boolean.TRUE,Boolean.FALSE,Boolean.FALSE);
+		return new Queue(RabbitMqEnum.QueueEnum.TEST_QUEUE.name(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
 	}
 
 	@Bean
@@ -120,6 +130,28 @@ public class RabbitMqConfig{
 		return admin;
 	}
 
+	@Bean
+	@ConditionalOnMissingBean(RetryTemplate.class)
+	public RetryTemplate retryTemplate(){
+		RetryTemplate retryTemplate = null;
+		if(properties.getTemplate().getRetry().isEnabled()){
+			PropertyMapper mapper = PropertyMapper.get();
+			retryTemplate = new RetryTemplate();
+			SimpleRetryPolicy policy = new SimpleRetryPolicy();
+			policy.setMaxAttempts(properties.getTemplate().getRetry().getMaxAttempts());
+			retryTemplate.setRetryPolicy(policy);
+
+
+
+		}
+		return retryTemplate;
+	}
+
+	@Bean
+	@ConditionalOnMissingBean(AsyncRabbitTemplate.class)
+	public AsyncRabbitTemplate asyncRabbitTemplate(RabbitTemplate rabbitTemplate){
+		return new AsyncRabbitTemplate(rabbitTemplate);
+	}
 
 
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
  * @author : RXK
  * Date : 2020/2/21 16:20
  * Desc: rabbitmq 链接监听器
+ * 发送到日志平台进行采集
  */
 @Component
 public class CustomerConnectionListener extends AbstractConfig implements ConnectionListener{

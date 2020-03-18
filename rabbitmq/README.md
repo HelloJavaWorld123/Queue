@@ -29,14 +29,37 @@
         22. nio -- 默认值: false;
         23. frameHandlerFactory -- 
         24. nioParams -- NIO 参数的详细配置
-            24.1. 
+            24.1. readByteBufferSize
+            24.2. writeByteBufferSize
+            24.3. nbIoThreads -- max Number of IO threads,默认值 1
+            24.4. writeEnqueuingTimeoutInMs -- 默认值 10000ms
+            24.5. writeQueueCapacity -- 写出数据队列的大小;默认值 10000
+            24.6. NioExecutor -- ExecutorService
+            24.7. threadFactory -- ThreadFactory
+            24.8. socketChannelConfigurator
+            24.9. sslEngineConfigurator
+            25.0. connectionShutDownExecutor -- ExecutorService
+            25.1. byteBufferFactory -- ByteBufferFactory; create java.io.byteBuffer
+            25.2. writeQueueFactory -- com.rabbitmq.client.impl.nio.BlockingQueueNioQueue.(使用:ArrayBlockingQueue)
         25. sslContextFactory -- 
         26. channelRpcTimeOut -- 默认值:10min
         27. 
     
 # Spring
     CacheConnectionFactory
+        1. org.springframework.amqp.rabbit.connection.CachingConnectionFactory.newRabbitConnectionFactory -- 创建了Rabbit ConnectionFactory,并将AutomicRecovery设置为False
+   
+- RabbitTemplate
+
+      1.1
+- RetryTemplate
+
+      1.1
+- AsyncRabbitTemplate
+        
+      1.1
     
 # QA
-1. 启动时不会检查配置的有效性？
-1.1 增加*spring-boot-starter-actuator* 会使用RabbitTemplate进行链接测试
+
+    1. 启动时不会检查配置的有效性？
+        1.1 增加*spring-boot-starter-actuator* 会使用RabbitTemplate进行链接测试
