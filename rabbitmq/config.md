@@ -1,5 +1,5 @@
 # RabbitMQ
-    ConnectionFactory
+    一.ConnectionFactory
         1. userName -- 默认值: guest
         2. password -- 默认值: guest
         3. port -- 默认值: -1 ;
@@ -44,7 +44,9 @@
         25. sslContextFactory -- 
         26. channelRpcTimeOut -- 默认值:10min
         27. 
-    
+    二.Exchange:
+    三.Queue:
+    四.Bingding:
 # Spring
     CacheConnectionFactory
         1. org.springframework.amqp.rabbit.connection.CachingConnectionFactory.newRabbitConnectionFactory -- 创建了Rabbit ConnectionFactory,并将AutomicRecovery设置为False
@@ -56,10 +58,19 @@
 
       1. RetryPolicy -- 重试策略
       2. BackOffPolicy -- ???
+        2.1. SleepingBackOffPolicy --
+        2.2. StatelessBackOffPolicy --
+        2.3. ExponentialBackOffPolicy -- 
+            2.3.1. ExponentialRandomBackOffPolicy --
+        2.4. FixedBackOffPolicy -- 
+        2.5. UniformRandomBackOffPolicy --
+        2.6. NoBackOffPolicy -- 默认的
 - AsyncRabbitTemplate
         
       1.1
-    
+- RabbitAdmin
+
+      1.1
 # QA
 
     1. 启动时不会检查配置的有效性？

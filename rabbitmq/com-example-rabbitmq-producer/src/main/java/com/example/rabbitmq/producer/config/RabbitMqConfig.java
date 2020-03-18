@@ -1,6 +1,6 @@
 package com.example.rabbitmq.producer.config;
 
-import com.example.rabbitmq.producer.enums.RabbitMqEnum;
+import com.example.rabbit.common.enums.RabbitMqEnum;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -11,20 +11,17 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
-import org.springframework.boot.autoconfigure.amqp.RabbitRetryTemplateCustomizer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.retry.RetryPolicy;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
 import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.Objects;
 
 /**
@@ -138,10 +135,16 @@ public class RabbitMqConfig{
 			PropertyMapper mapper = PropertyMapper.get();
 			retryTemplate = new RetryTemplate();
 			SimpleRetryPolicy policy = new SimpleRetryPolicy();
-			policy.setMaxAttempts(properties.getTemplate().getRetry().getMaxAttempts());
+			mapper.from(properties.getTemplate().getRetry()::getMaxAttempts).to(policy::setMaxAttempts);
 			retryTemplate.setRetryPolicy(policy);
+			ExponentialBackOffPolicy exponentialBackOff = new ExponentialBackOffPolicy();
+			mapper.from(properties.getTemplate().getRetry()::getInitialInterval)
+					.whenNonNull().asInt(Duration::toMillis).to(exponentialBackOff::setInitialInterval);
+			mapper.from(properties.getTemplate().getRetry()::getMaxInterval).whenNonNull()
+					.asInt(Duration::toMillis).to(exponentialBackOff::setMaxInterval);
+			mapper.from(properties.getTemplate().getRetry()::getMultiplier).to(exponentialBackOff::setMultiplier);
 
-
+			retryTemplate.setBackOffPolicy(exponentialBackOff);
 
 		}
 		return retryTemplate;

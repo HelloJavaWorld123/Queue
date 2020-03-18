@@ -1,6 +1,6 @@
 package com.example.rabbitmq.producer.controller;
 
-import com.example.rabbitmq.producer.enums.RabbitMqEnum;
+import com.example.rabbit.common.enums.RabbitMqEnum;
 import com.example.rabbitmq.producer.service.RabbitMqSendMessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;

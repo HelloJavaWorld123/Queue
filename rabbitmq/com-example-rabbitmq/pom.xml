@@ -24,6 +24,7 @@
     </properties>
 
     <modules>
+        <module>../com-example-rabbitmq-common</module>
         <module>../com-example-rabbitmq-producer</module>
         <module>../com-example-rabbitmq-consumer</module>
     </modules>

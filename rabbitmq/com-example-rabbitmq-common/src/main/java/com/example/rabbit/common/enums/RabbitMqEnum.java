@@ -1,4 +1,4 @@
-package com.example.rabbitmq.producer.enums;
+package com.example.rabbit.common.enums;
 
 /**
  * @author : RXK
