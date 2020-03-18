@@ -54,7 +54,8 @@
       1.1
 - RetryTemplate
 
-      1.1
+      1. RetryPolicy -- 重试策略
+      2. BackOffPolicy -- ???
 - AsyncRabbitTemplate
         
       1.1
