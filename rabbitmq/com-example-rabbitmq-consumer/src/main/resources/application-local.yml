@@ -2,15 +2,23 @@ spring:
   rabbitmq:
     host: 127.0.0.1
     port: 5672
-    username: admin
+    username: all_virtual_host_admin
     password: root
-    virtual-host: /
+    virtual-host: virtual_host_test
     requested-heartbeat: 10
     #设置多大是合理的？？？
     connection-timeout: 100
     cache:
       connection:
+        #Cache mode 的默认值
         mode: channel
+        # 该值当 Cache mode 是 Connection 才有用
+        #size: 10
+      channel:
+        #SessionSize
+        size: 10
+        #单位 ms
+        checkout-timeout: 10000
     template:
       retry:
         enabled: true
@@ -19,6 +27,7 @@ spring:
         max-interval: 10000
         #递增的倍数
         multiplier: 2
+      mandatory: true
     listener:
       direct:
         auto-startup: true

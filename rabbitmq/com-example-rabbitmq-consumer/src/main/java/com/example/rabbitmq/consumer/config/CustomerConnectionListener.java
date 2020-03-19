@@ -20,16 +20,16 @@ public class CustomerConnectionListener implements ConnectionListener{
 
 	@Override
 	public void onCreate(Connection connection){
-		LOGGER.info("---------------Create Connection :{}",connection);
+		LOGGER.info("---------------Create Connection:{}-----------",connection);
 	}
 
 	@Override
 	public void onClose(Connection connection){
-		LOGGER.info("---------------Close Connection :{}",connection);
+		LOGGER.info("---------------Close Connection:{}------------",connection);
 	}
 
 	@Override
 	public void onShutDown(ShutdownSignalException signal){
-		LOGGER.error("---------------On Shut Down",signal);
+		LOGGER.error("---------------On Shut Down:{0}------",signal);
 	}
 }

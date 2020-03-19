@@ -4,9 +4,12 @@ import com.example.rabbit.common.enums.RabbitMqEnum;
 import com.rabbitmq.client.ConnectionFactory;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -30,17 +33,38 @@ import java.time.Duration;
 @EnableConfigurationProperties(value = {RabbitProperties.class})
 public class RabbitMqConfig{
 
-	@Autowired
-	private RabbitProperties rabbitProperties;
+	private final RabbitProperties rabbitProperties;
 
-	@Autowired
-	private CustomerChannelListener customerChannelListener;
+	private final CustomerChannelListener customerChannelListener;
 
-	@Autowired
-	private CustomerConnectionListener customerConnectionListener;
+	private final CustomerConnectionListener customerConnectionListener;
 
-	@Autowired
-	private RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler;
+	private final RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler;
+
+	public RabbitMqConfig(RabbitProperties rabbitProperties, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler){
+		this.rabbitProperties = rabbitProperties;
+		this.customerChannelListener = customerChannelListener;
+		this.customerConnectionListener = customerConnectionListener;
+		this.rabbitConnectionExceptionHandler = rabbitConnectionExceptionHandler;
+	}
+
+
+	/**
+	 * 该Bean 的name(rabbitListenerContainerFactory) 是注解@RabbitListener的ContainerFacotory的默认取值
+	 */
+	@Bean
+	@ConditionalOnMissingBean(MessageListenerContainer.class)
+	public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(CachingConnectionFactory cachingConnectionFactory,RetryTemplate retryTemplate){
+		SimpleRabbitListenerContainerFactory listenerContainer = new SimpleRabbitListenerContainerFactory();
+		listenerContainer.setConnectionFactory(cachingConnectionFactory);
+		listenerContainer.setConcurrentConsumers(1);
+		listenerContainer.setMaxConcurrentConsumers(8);
+		listenerContainer.setReceiveTimeout(60000L);
+		listenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+		listenerContainer.setRetryTemplate(retryTemplate);
+//		listenerContainer.setMessageConverter();
+		return listenerContainer;
+	}
 
 
 	@Bean(destroyMethod = "destroy")
@@ -50,10 +74,15 @@ public class RabbitMqConfig{
 		PropertyMapper mapper = PropertyMapper.get();
 		RabbitProperties.Cache.Channel channel = rabbitProperties.getCache().getChannel();
 		mapper.from(channel::getSize).to(cachingConnectionFactory::setChannelCacheSize);
+		mapper.from(channel::getCheckoutTimeout)
+				.whenNonNull()
+				.asInt(Duration::toMillis)
+				.to(cachingConnectionFactory::setChannelCheckoutTimeout);
 		RabbitProperties.Cache.Connection connection = rabbitProperties.getCache().getConnection();
 		mapper.from(connection::getMode).to(cachingConnectionFactory::setCacheMode);
-		mapper.from(connection::getSize).to(cachingConnectionFactory::setConnectionCacheSize);
-
+		/*当 Cache Mode 是 Channel时,该值不起作用*/
+		/*When the cache mode is 'CHANNEL', the connection cache size cannot be configured*/
+//		mapper.from(connection::getSize).to(cachingConnectionFactory::setConnectionCacheSize);
 		cachingConnectionFactory.addChannelListener(customerChannelListener);
 		cachingConnectionFactory.addConnectionListener(customerConnectionListener);
 		cachingConnectionFactory.afterPropertiesSet();
@@ -83,6 +112,9 @@ public class RabbitMqConfig{
 	}
 
 
+	/**
+	 * 用于 消息确认的发送
+	 */
 	@Bean
 	public RetryTemplate retryTemplate(){
 		RetryTemplate retryTemplate = null;
@@ -106,44 +138,4 @@ public class RabbitMqConfig{
 		}
 		return retryTemplate;
 	}
-
-	@Bean
-	@ConditionalOnMissingBean(RabbitTemplate.class)
-	public RabbitTemplate rabbitTemplate(RetryTemplate retryTemplate,CachingConnectionFactory factory){
-		RabbitTemplate rabbitTemplate = new RabbitTemplate();
-		rabbitTemplate.setRetryTemplate(retryTemplate);
-		rabbitTemplate.setConnectionFactory(factory);
-		rabbitTemplate.setEncoding("UTF-8");
-		rabbitTemplate.afterPropertiesSet();
-		return rabbitTemplate;
-	}
-
-	@Bean
-	public DirectExchange directExchange(){
-		return new DirectExchange(RabbitMqEnum.ExchangeEnum.TEST_DIRECT_EXCHANGE.name(),true,false);
-	}
-
-	@Bean
-	public Queue queue(){
-		return new Queue(RabbitMqEnum.QueueEnum.TEST_QUEUE.name(),true,false,false);
-	}
-
-	@Bean
-	public Binding binding(){
-		return BindingBuilder.bind(queue()).to(directExchange()).with(RabbitMqEnum.RoutingKey.TEST_ROUTING_KEY.name());
-	}
-
-
-	@Bean
-	public RabbitAdmin rabbitAdmin(RabbitTemplate rabbitTemplate, DirectExchange directExchange,Queue queue,Binding binding){
-		RabbitAdmin admin = new RabbitAdmin(rabbitTemplate);
-		admin.setAutoStartup(Boolean.TRUE);
-		admin.declareExchange(directExchange);
-		admin.declareQueue(queue);
-		admin.declareBinding(binding);
-		admin.afterPropertiesSet();
-		return admin;
-	}
-
-
 }

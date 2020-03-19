@@ -18,41 +18,41 @@ public class RabbitConnectionExceptionHandler implements ExceptionHandler{
 
 	@Override
 	public void handleUnexpectedConnectionDriverException(Connection conn, Throwable exception){
-		LOGGER.error("Handle Unexpected Connection Driver{},Exception:{}",conn,exception);
+		LOGGER.error("--Consumer--Handle Unexpected Connection Driver:{{}},Exception:{}-------",conn,exception);
 	}
 
 	@Override
 	public void handleReturnListenerException(Channel channel, Throwable exception){
-		LOGGER.error("Handle Return Listener:{},Exception:{}",channel,exception);
+		LOGGER.error("--Consumer---Handle Return Listener:{},Exception:{}------",channel,exception);
 	}
 
 	@Override
 	public void handleConfirmListenerException(Channel channel, Throwable exception){
-		LOGGER.error("Handle Confirm Listener:{},Exception:{}",channel,exception);
+		LOGGER.error("---Consumer---Handle Confirm Listener:{},Exception:{}-------",channel,exception);
 	}
 
 	@Override
 	public void handleBlockedListenerException(Connection connection, Throwable exception){
-		LOGGER.error("Handle Blocked Listener:{},Exception:{}",connection,exception);
+		LOGGER.error("--Consumer--Handle Blocked Listener:{},Exception:{}------------",connection,exception);
 	}
 
 	@Override
 	public void handleConsumerException(Channel channel, Throwable exception, Consumer consumer, String consumerTag, String methodName){
-		LOGGER.error("Handle Consumer :{},Exception:{},Consumer:{},consumerTag:{},methodName:{}",channel,exception,consumer,consumerTag,methodName);
+		LOGGER.error("--Consumer--Handle Consumer :{},Exception:{},Consumer:{},consumerTag:{},methodName:{}----",channel,exception,consumer,consumerTag,methodName);
 	}
 
 	@Override
 	public void handleConnectionRecoveryException(Connection conn, Throwable exception){
-		LOGGER.error("Handle Connection Recovery:{},Exception:{}",conn,exception);
+		LOGGER.error("--Consumer--Handle Connection Recovery:{},Exception:{}-----",conn,exception);
 	}
 
 	@Override
 	public void handleChannelRecoveryException(Channel ch, Throwable exception){
-		LOGGER.error("Handle Channel Recovery:{},Exception:{}",ch,exception);
+		LOGGER.error("--Consumer--Handle Channel Recovery:{},Exception:{}----",ch,exception);
 	}
 
 	@Override
 	public void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException exception){
-		LOGGER.error("Handle Topology Recovery:{},Exception:{},TopologyRecoveryException:{}",conn,exception,exception);
+		LOGGER.error("--Consumer--Handle Topology Recovery:{},Exception:{},TopologyRecoveryException:{}----",conn,exception,exception);
 	}
 }

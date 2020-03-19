@@ -1,6 +1,7 @@
 package com.example.rabbitmq.producer.config;
 
 import com.example.rabbit.common.enums.RabbitMqEnum;
+import com.rabbitmq.client.ConnectionFactory;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -8,7 +9,6 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
@@ -22,7 +22,6 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
 import java.time.Duration;
-import java.util.Objects;
 
 /**
  * @author : RXK
@@ -36,14 +35,23 @@ public class RabbitMqConfig{
 
 	private final RabbitProperties properties;
 
+	private final BrokerConfirmCallBack brokerConfirmCallBack;
+
+	private final ConsumerReturnCallBack consumerReturnCallBack;
+
 	private final CustomerChannelListener customerChannelListener;
 
 	private final CustomerConnectionListener customerConnectionListener;
 
-	public RabbitMqConfig(RabbitProperties properties, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener){
+	private final CustomerRabbitExceptionHandler customerRabbitExceptionHandler;
+
+	public RabbitMqConfig(RabbitProperties properties, BrokerConfirmCallBack brokerConfirmCallBack, ConsumerReturnCallBack consumerReturnCallBack, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, CustomerRabbitExceptionHandler customerRabbitExceptionHandler){
 		this.properties = properties;
+		this.brokerConfirmCallBack = brokerConfirmCallBack;
+		this.consumerReturnCallBack = consumerReturnCallBack;
 		this.customerChannelListener = customerChannelListener;
 		this.customerConnectionListener = customerConnectionListener;
+		this.customerRabbitExceptionHandler = customerRabbitExceptionHandler;
 	}
 
 	@Bean(initMethod = "start",
@@ -56,6 +64,9 @@ public class RabbitMqConfig{
 
 		//set RetryRabbitTemplate
 		rabbitTemplate.setRetryTemplate(retryTemplate);
+
+		rabbitTemplate.setConfirmCallback(brokerConfirmCallBack);
+		rabbitTemplate.setReturnCallback(consumerReturnCallBack);
 		rabbitTemplate.afterPropertiesSet();
 		return rabbitTemplate;
 	}
@@ -63,8 +74,8 @@ public class RabbitMqConfig{
 
 	@Bean(destroyMethod = "destroy")
 	@ConditionalOnMissingBean(value = CachingConnectionFactory.class)
-	public CachingConnectionFactory cachingConnectionFactory() throws Exception{
-		CachingConnectionFactory factory = new CachingConnectionFactory(Objects.requireNonNull(rabbitConnectionFactoryBean().getObject()));
+	public CachingConnectionFactory cachingConnectionFactory(ConnectionFactory connectionFactory){
+		CachingConnectionFactory factory = new CachingConnectionFactory(connectionFactory);
 		factory.setPublisherReturns(properties.isPublisherReturns());
 		factory.setPublisherConfirmType(properties.getPublisherConfirmType());
 		factory.setCacheMode(properties.getCache().getConnection().getMode());
@@ -74,26 +85,24 @@ public class RabbitMqConfig{
 		factory.addChannelListener(customerChannelListener);
 		//添加自定义的connection的监听器
 		factory.addConnectionListener(customerConnectionListener);
-		factory.setConnectionLimit(10);
-
 		factory.afterPropertiesSet();
 		return factory;
 	}
 
-	RabbitConnectionFactoryBean rabbitConnectionFactoryBean(){
-		RabbitConnectionFactoryBean factoryBean = new RabbitConnectionFactoryBean();
+	@Bean
+	public ConnectionFactory connectionFactory(){
+		ConnectionFactory factory = new ConnectionFactory();
 		PropertyMapper mapper = PropertyMapper.get();
-		mapper.from(properties::getHost).to(factoryBean::setHost);
-		mapper.from(properties::getPort).to(factoryBean::setPort);
-		mapper.from(properties::getUsername).to(factoryBean::setUsername);
-		mapper.from(properties::getPassword).to(factoryBean::setPassword);
-		mapper.from(properties::getVirtualHost).to(factoryBean::setVirtualHost);
-		mapper.from(properties::getRequestedHeartbeat).whenNonNull().asInt(Duration::getSeconds).to(factoryBean::setRequestedHeartbeat);
-		RabbitProperties.Ssl ssl = properties.getSsl();
-		mapper.from(ssl::isEnabled).to(factoryBean::setUseSSL);
-		mapper.from(properties::getConnectionTimeout).whenNonNull().asInt(Duration::toMillis).to(factoryBean::setConnectionTimeout);
-		factoryBean.afterPropertiesSet();
-		return factoryBean;
+		mapper.from(properties::getHost).to(factory::setHost);
+		mapper.from(properties::getPort).to(factory::setPort);
+		mapper.from(properties::getUsername).to(factory::setUsername);
+		mapper.from(properties::getPassword).to(factory::setPassword);
+		mapper.from(properties::getVirtualHost).to(factory::setVirtualHost);
+		mapper.from(properties::getRequestedHeartbeat).whenNonNull().asInt(Duration::getSeconds).to(factory::setRequestedHeartbeat);
+		mapper.from(properties::getConnectionTimeout).whenNonNull().asInt(Duration::toMillis).to(factory::setConnectionTimeout);
+		factory.setExceptionHandler(customerRabbitExceptionHandler);
+		factory.setAutomaticRecoveryEnabled(Boolean.TRUE);
+		return factory;
 	}
 
 
@@ -108,21 +117,23 @@ public class RabbitMqConfig{
 	}
 
 	@Bean
-	public Binding binding(){
-		return BindingBuilder.bind(queue()).to(directExchange()).with(RabbitMqEnum.RoutingKey.TEST_ROUTING_KEY.name());
+	public Binding binding(Queue queue,DirectExchange directExchange){
+		return BindingBuilder.bind(queue).to(directExchange).with(RabbitMqEnum.RoutingKey.TEST_ROUTING_KEY);
 	}
 
-	/**
-	 * TODO  这玩意干嘛使得？？？？
-	 */
+
 	@Bean
 	@ConditionalOnMissingBean(value = RabbitAdmin.class)
-	public RabbitAdmin rabbitAdmin() throws Exception{
-		RabbitAdmin admin = new RabbitAdmin(cachingConnectionFactory());
+	public RabbitAdmin rabbitAdmin(RabbitTemplate rabbitTemplate,DirectExchange directExchange,Queue queue,Binding binding){
+		/*
+		*有两个构造方法:ConnectionFactory 和 RabbitTemplate;
+		* 在RabbitTemplate 中 包含 RetryTemplate时,就会有区别.
+		* */
+		RabbitAdmin admin = new RabbitAdmin(rabbitTemplate);
 		admin.setAutoStartup(true);
-		admin.declareExchange(directExchange());
-		admin.declareQueue(queue());
-		admin.declareBinding(binding());
+		admin.declareExchange(directExchange);
+		admin.declareQueue(queue);
+		admin.declareBinding(binding);
 		admin.afterPropertiesSet();
 		return admin;
 	}
@@ -145,6 +156,7 @@ public class RabbitMqConfig{
 			mapper.from(properties.getTemplate().getRetry()::getMultiplier).to(exponentialBackOff::setMultiplier);
 
 			retryTemplate.setBackOffPolicy(exponentialBackOff);
+			retryTemplate.setThrowLastExceptionOnExhausted(Boolean.TRUE);
 
 		}
 		return retryTemplate;

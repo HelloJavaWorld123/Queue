@@ -72,6 +72,9 @@
 - AsyncRabbitTemplate
         
       1.1
+- MessageListenerContainer
+
+      1.1
 - RabbitAdmin
 
       1.Exchange
@@ -92,8 +95,12 @@
 - @RabbitHandler
 - @PayLoad
 - @Header
+- Channel: Prefetch Count: 设置Channel或者Queue上堆积消息的数量.false:指定的Queue上未被处理的消息最大数量.
+           true:Channel上未被处理的消息的最大数量.影响到客户端的吞吐量
 
 # QA
 
-    1. 启动时不会检查配置的有效性？
-        1.1 增加*spring-boot-starter-actuator* 会使用RabbitTemplate进行链接测试
+    1.启动时不会检查配置的有效性？
+       1.1 实现[com.rabbitmq.client.ExceptionHandler]接口.其实每次启动都会检查,
+            只是在日志没有被打印出来.实现上面的接口,打印日志就会发现异常信息.
+       1.2 增加*spring-boot-starter-actuator* 会使用RabbitTemplate进行链接测试

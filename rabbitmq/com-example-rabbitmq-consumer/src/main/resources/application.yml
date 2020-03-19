@@ -9,3 +9,6 @@ logging:
         transaction: debug
     com:
       rabbitmq: debug
+spring:
+  profiles:
+    active: local
