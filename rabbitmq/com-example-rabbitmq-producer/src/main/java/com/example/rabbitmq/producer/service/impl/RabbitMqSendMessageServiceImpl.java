@@ -1,5 +1,6 @@
 package com.example.rabbitmq.producer.service.impl;
 
+import com.example.rabbitmq.producer.service.DefaultConfirmCallBackService;
 import com.example.rabbitmq.producer.service.RabbitMqSendMessageService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
@@ -20,8 +21,11 @@ public class RabbitMqSendMessageServiceImpl implements RabbitMqSendMessageServic
 
 	private final RabbitTemplate rabbitTemplate;
 
-	public RabbitMqSendMessageServiceImpl(RabbitTemplate rabbitTemplate){
+	private final DefaultConfirmCallBackService defaultConfirmCallBackService;
+
+	public RabbitMqSendMessageServiceImpl(RabbitTemplate rabbitTemplate, DefaultConfirmCallBackService defaultConfirmCallBackService){
 		this.rabbitTemplate = rabbitTemplate;
+		this.defaultConfirmCallBackService = defaultConfirmCallBackService;
 	}
 
 	@Override
@@ -51,6 +55,7 @@ public class RabbitMqSendMessageServiceImpl implements RabbitMqSendMessageServic
 	@Override
 	public void sendMessage(String exchange, String routingKey, String message, CorrelationData correlationData){
 		Assert.isTrue(!StringUtils.isAllEmpty(exchange,routingKey,message) || Objects.nonNull(correlationData),"发送消息的参数不能为空");
+		rabbitTemplate.setConfirmCallback(defaultConfirmCallBackService);
 		rabbitTemplate.convertAndSend(exchange,routingKey,message,correlationData);
 	}
 }

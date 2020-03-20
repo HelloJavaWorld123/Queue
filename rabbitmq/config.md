@@ -103,10 +103,11 @@
 # 消息的确认机制
    1.  *           ConfirmCallBack
        * Producer  ---------------> Rabbit Cluster Broker -----> Exchange ----> Queue ----> Consumer
-       *           <--------------                        <-----          <----       <----
+       *           <--------------                        <-----          <----       
        *            ReturnCallBack 
     
    2. ConfirmCallBack: 是Cluster Broker收到消息后给Producer的确认.
+      2.0 一个RabbitTemplate只能有一个ConfigCallBack,或者在Config中全局配置或者在条用RabbitTemplate中单独配置
       2.1 CachingConnectionFactory中setConfirmCallBack()过时,由ConfirmType取缔
       2.2 ConfirmType:
           2.2.1: None : 默认的确认机制

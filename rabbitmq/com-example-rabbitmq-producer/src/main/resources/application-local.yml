@@ -10,7 +10,7 @@ spring:
     requested-heartbeat: 30
     connection-timeout: 30000
     publisher-returns: true
-    publisher-confirm-type: correlated
+    publisher-confirm-type: simple
     dynamic: true
     listener:
       direct:

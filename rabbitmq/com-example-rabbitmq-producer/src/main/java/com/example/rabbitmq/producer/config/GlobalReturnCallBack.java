@@ -1,8 +1,7 @@
 package com.example.rabbitmq.producer.config;
 
-import com.example.rabbitmq.producer.service.RabbitMqSendMessageService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.rabbit.common.utils.LoggerUtils;
+import com.example.rabbitmq.producer.service.DefaultReturnCallBackService;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
@@ -14,13 +13,15 @@ import org.springframework.stereotype.Component;
  *
  *  *           ConfirmCallBack
  *  * Producer  ---------------> Rabbit Cluster Broker -----> Exchange ----> Queue ----> Consumer
- *  *           <--------------                        <-----          <----       <----
+ *  *           <--------------                        <-----          <----
  *  *            ReturnCallBack
+ *
+ *  Exchange 在将消息发送到无效的Queue时 会回调该ReturnCallBack,如果成功投递到Queue中会不调用,不管Queue是否有消费者
+ *
+ * @see DefaultReturnCallBackService
  */
-@Component
-public class ConsumerReturnCallBack implements RabbitTemplate.ReturnCallback{
-
-	static final Logger LOGGER = LoggerFactory.getLogger(RabbitMqSendMessageService.class);
+@Deprecated
+public class GlobalReturnCallBack implements RabbitTemplate.ReturnCallback{
 
 	/**
 	 * 返回消息回调
@@ -32,6 +33,6 @@ public class ConsumerReturnCallBack implements RabbitTemplate.ReturnCallback{
 	 */
 	@Override
 	public void returnedMessage(Message message, int replyCode, String replyText, String exchange, String routingKey){
-		LOGGER.info("----消息体是:{{}},回复编码是:{{}},回复的内容是:{{}},交换机是:{{}},路由key是:{{}}-------",message.toString(),replyCode,replyText,exchange,routingKey);
+		LoggerUtils.info(String.format("----消息体是:{%s},回复编码是:{%s},回复的内容是:{%s},交换机是:{%s},路由key是:{%s}-------", message.toString(), replyCode, replyText, exchange, routingKey));
 	}
 }

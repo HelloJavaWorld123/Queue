@@ -35,20 +35,14 @@ public class RabbitMqConfig{
 
 	private final RabbitProperties properties;
 
-	private final BrokerConfirmCallBack brokerConfirmCallBack;
-
-	private final ConsumerReturnCallBack consumerReturnCallBack;
-
 	private final CustomerChannelListener customerChannelListener;
 
 	private final CustomerConnectionListener customerConnectionListener;
 
 	private final CustomerRabbitExceptionHandler customerRabbitExceptionHandler;
 
-	public RabbitMqConfig(RabbitProperties properties, BrokerConfirmCallBack brokerConfirmCallBack, ConsumerReturnCallBack consumerReturnCallBack, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, CustomerRabbitExceptionHandler customerRabbitExceptionHandler){
+	public RabbitMqConfig(RabbitProperties properties,CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, CustomerRabbitExceptionHandler customerRabbitExceptionHandler){
 		this.properties = properties;
-		this.brokerConfirmCallBack = brokerConfirmCallBack;
-		this.consumerReturnCallBack = consumerReturnCallBack;
 		this.customerChannelListener = customerChannelListener;
 		this.customerConnectionListener = customerConnectionListener;
 		this.customerRabbitExceptionHandler = customerRabbitExceptionHandler;
@@ -64,10 +58,8 @@ public class RabbitMqConfig{
 
 		//set RetryRabbitTemplate
 		rabbitTemplate.setRetryTemplate(retryTemplate);
+		//强制 Exchange 将消息发送到Queue中时,返回return的消息
 		rabbitTemplate.setMandatory(properties.getTemplate().getMandatory());
-
-		rabbitTemplate.setConfirmCallback(brokerConfirmCallBack);
-		rabbitTemplate.setReturnCallback(consumerReturnCallBack);
 		rabbitTemplate.afterPropertiesSet();
 		return rabbitTemplate;
 	}
@@ -134,9 +126,6 @@ public class RabbitMqConfig{
 		* */
 		RabbitAdmin admin = new RabbitAdmin(rabbitTemplate);
 		admin.setAutoStartup(true);
-		admin.declareExchange(directExchange);
-		admin.declareQueue(queue);
-		admin.declareBinding(binding);
 		admin.afterPropertiesSet();
 		return admin;
 	}
