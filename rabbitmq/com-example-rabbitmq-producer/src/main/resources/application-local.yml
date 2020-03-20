@@ -10,7 +10,7 @@ spring:
     requested-heartbeat: 30
     connection-timeout: 30000
     publisher-returns: true
-    publisher-confirm-type: simple
+    publisher-confirm-type: correlated
     dynamic: true
     listener:
       direct:
@@ -24,7 +24,7 @@ spring:
         #逐步递增的倍数
         multiplier: 1.0
        #设置 Exchange 在将消息分发给队列时，如果Exchange没有绑定队列或者绑定队列路由键不一致时，怎么处理这条消息 是丢弃还是返还给生产者
-      #mandatory: true
+      mandatory: true
     cache:
       connection:
         mode: connection

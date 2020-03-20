@@ -64,6 +64,7 @@ public class RabbitMqConfig{
 
 		//set RetryRabbitTemplate
 		rabbitTemplate.setRetryTemplate(retryTemplate);
+		rabbitTemplate.setMandatory(properties.getTemplate().getMandatory());
 
 		rabbitTemplate.setConfirmCallback(brokerConfirmCallBack);
 		rabbitTemplate.setReturnCallback(consumerReturnCallBack);
@@ -80,6 +81,8 @@ public class RabbitMqConfig{
 		factory.setPublisherConfirmType(properties.getPublisherConfirmType());
 		factory.setCacheMode(properties.getCache().getConnection().getMode());
 		factory.setChannelCacheSize(properties.getCache().getChannel().getSize());
+		//由 ConfirmType的取缔,根据ConfirmType的不同,确认消息的从Broker的确认机制
+//		factory.setPublisherConfirms(Boolean.TRUE);
 
 		//添加自定义的channel监听器
 		factory.addChannelListener(customerChannelListener);

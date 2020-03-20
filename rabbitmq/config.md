@@ -98,6 +98,23 @@
 - Channel: Prefetch Count: 设置Channel或者Queue上堆积消息的数量.false:指定的Queue上未被处理的消息最大数量.
            true:Channel上未被处理的消息的最大数量.影响到客户端的吞吐量
 
+
+
+# 消息的确认机制
+   1.  *           ConfirmCallBack
+       * Producer  ---------------> Rabbit Cluster Broker -----> Exchange ----> Queue ----> Consumer
+       *           <--------------                        <-----          <----       <----
+       *            ReturnCallBack 
+    
+   2. ConfirmCallBack: 是Cluster Broker收到消息后给Producer的确认.
+      2.1 CachingConnectionFactory中setConfirmCallBack()过时,由ConfirmType取缔
+      2.2 ConfirmType:
+          2.2.1: None : 默认的确认机制
+          2.2.2: Correlated:
+          2.2.3: Simple: 
+   3. ReturnCallBack:
+      3.0 消息由Cluster Broker 投递到 Exchange,然后由Exchange是否成功投递到Queue时,返回的相关信息
+      3.1 Mandatory: 设置为True;
 # QA
 
     1.启动时不会检查配置的有效性？

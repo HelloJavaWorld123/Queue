@@ -2,9 +2,12 @@ package com.example.rabbitmq.producer.service.impl;
 
 import com.example.rabbitmq.producer.service.RabbitMqSendMessageService;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+
+import java.util.Objects;
 
 /**
  * @author : RXK
@@ -31,5 +34,23 @@ public class RabbitMqSendMessageServiceImpl implements RabbitMqSendMessageServic
 	public void sendMessage(String routingKey, String message){
 		Assert.isTrue(StringUtils.isNotEmpty(routingKey)&&StringUtils.isNotEmpty(message),"routingKey或者message不能为空");
 		rabbitTemplate.convertAndSend(routingKey,message);
+	}
+
+	@Override
+	public void sendMessage(String routingKey, String message, CorrelationData correlationData){
+		Assert.isTrue(!StringUtils.isAllEmpty(routingKey,message)|| Objects.nonNull(correlationData),"参数不能为空");
+		rabbitTemplate.convertAndSend(routingKey, (Object) message,correlationData);
+	}
+
+	@Override
+	public void sendMessage(String exchange, String routingKey, String message){
+		Assert.isTrue(StringUtils.isAllEmpty(exchange,routingKey,message),"发送消息的参数不能为空");
+		rabbitTemplate.convertAndSend(exchange,routingKey,message);
+	}
+
+	@Override
+	public void sendMessage(String exchange, String routingKey, String message, CorrelationData correlationData){
+		Assert.isTrue(!StringUtils.isAllEmpty(exchange,routingKey,message) || Objects.nonNull(correlationData),"发送消息的参数不能为空");
+		rabbitTemplate.convertAndSend(exchange,routingKey,message,correlationData);
 	}
 }

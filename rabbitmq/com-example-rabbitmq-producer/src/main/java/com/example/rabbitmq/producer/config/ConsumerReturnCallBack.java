@@ -11,6 +11,11 @@ import org.springframework.stereotype.Component;
  * @author : RXK
  * Date : 2020/3/19 18:52
  * Desc:
+ *
+ *  *           ConfirmCallBack
+ *  * Producer  ---------------> Rabbit Cluster Broker -----> Exchange ----> Queue ----> Consumer
+ *  *           <--------------                        <-----          <----       <----
+ *  *            ReturnCallBack
  */
 @Component
 public class ConsumerReturnCallBack implements RabbitTemplate.ReturnCallback{
@@ -27,6 +32,6 @@ public class ConsumerReturnCallBack implements RabbitTemplate.ReturnCallback{
 	 */
 	@Override
 	public void returnedMessage(Message message, int replyCode, String replyText, String exchange, String routingKey){
-		LOGGER.info("消息体是:{},回复编码是:{},回复的内容是:{},交换机是:{},路由key是:{}",message.toString(),replyCode,replyText,exchange,routingKey);
+		LOGGER.info("----消息体是:{{}},回复编码是:{{}},回复的内容是:{{}},交换机是:{{}},路由key是:{{}}-------",message.toString(),replyCode,replyText,exchange,routingKey);
 	}
 }
