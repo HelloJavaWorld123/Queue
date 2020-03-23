@@ -6,6 +6,8 @@ spring:
     password: root
     virtual-host: virtual_host_test
     requested-heartbeat: 10
+    publisher-returns: true
+    publisher-confirm-type: simple
     #设置多大是合理的？？？
     connection-timeout: 100
     cache:
@@ -31,3 +33,7 @@ spring:
     listener:
       direct:
         auto-startup: true
+      simple:
+        batch-size: 10
+        # 在Broker中的队列出现不能时，是否停止容器
+        missing-queues-fatal: true

@@ -1,16 +1,11 @@
-package com.example.rabbitmq.consumer.config;
+package com.example.rabbitmq.consumer.config.rabbit;
 
-import com.example.rabbit.common.enums.RabbitMqEnum;
 import com.rabbitmq.client.ConnectionFactory;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
-import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -20,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.time.Duration;
 
@@ -35,14 +31,17 @@ public class RabbitMqConfig{
 
 	private final RabbitProperties rabbitProperties;
 
+	private final ThreadPoolTaskExecutor threadPoolTaskExecutor;
+
 	private final CustomerChannelListener customerChannelListener;
 
 	private final CustomerConnectionListener customerConnectionListener;
 
 	private final RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler;
 
-	public RabbitMqConfig(RabbitProperties rabbitProperties, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler){
+	public RabbitMqConfig(RabbitProperties rabbitProperties, ThreadPoolTaskExecutor threadPoolTaskExecutor, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler){
 		this.rabbitProperties = rabbitProperties;
+		this.threadPoolTaskExecutor = threadPoolTaskExecutor;
 		this.customerChannelListener = customerChannelListener;
 		this.customerConnectionListener = customerConnectionListener;
 		this.rabbitConnectionExceptionHandler = rabbitConnectionExceptionHandler;
@@ -52,16 +51,34 @@ public class RabbitMqConfig{
 	/**
 	 * 该Bean 的name(rabbitListenerContainerFactory) 是注解@RabbitListener的ContainerFacotory的默认取值
 	 */
+	/**
+	 * SMLC -- SimpleRabbitListenerContainerFactory
+	 * 1.BatchSize
+	 * 2.消费者的数量自动的缩容
+	 * 3.自动缩容的消费者共用同一个线程
+	 * DMLC -- DirectRabbitListenerContainerFactory
+	 * 1.自动缩容的消费者线程间隔离，
+	 */
 	@Bean
 	@ConditionalOnMissingBean(MessageListenerContainer.class)
 	public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(CachingConnectionFactory cachingConnectionFactory,RetryTemplate retryTemplate){
 		SimpleRabbitListenerContainerFactory listenerContainer = new SimpleRabbitListenerContainerFactory();
 		listenerContainer.setConnectionFactory(cachingConnectionFactory);
+		listenerContainer.setAutoStartup(Boolean.TRUE);
 		listenerContainer.setConcurrentConsumers(1);
 		listenerContainer.setMaxConcurrentConsumers(8);
 		listenerContainer.setReceiveTimeout(60000L);
 		listenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL);
 		listenerContainer.setRetryTemplate(retryTemplate);
+		listenerContainer.setBatchListener(Boolean.TRUE);
+		listenerContainer.setConsumerBatchEnabled(Boolean.TRUE);
+		listenerContainer.setBatchSize(rabbitProperties.getListener().getSimple().getBatchSize());
+		//自定义线程池 默认为：SimpleAsyncTaskExecutor(线程不会复用,每一个任务创建一个新的线程)
+		listenerContainer.setTaskExecutor(threadPoolTaskExecutor);
+//		When 'mismatchedQueuesFatal' is 'true', there must be exactly one AmqpAdmin in the context or you must inject one into this container;
+//		listenerContainer.setMismatchedQueuesFatal(rabbitProperties.getListener().getSimple().isMissingQueuesFatal());
+//		listenerContainer.setChannelTransacted(true);
+//		listenerContainer.setTransactionManager();
 //		listenerContainer.setMessageConverter();
 		return listenerContainer;
 	}
@@ -85,6 +102,8 @@ public class RabbitMqConfig{
 //		mapper.from(connection::getSize).to(cachingConnectionFactory::setConnectionCacheSize);
 		cachingConnectionFactory.addChannelListener(customerChannelListener);
 		cachingConnectionFactory.addConnectionListener(customerConnectionListener);
+		mapper.from(rabbitProperties::isPublisherReturns).to(cachingConnectionFactory::setPublisherReturns);
+		mapper.from(rabbitProperties::getPublisherConfirmType).whenNonNull().to(cachingConnectionFactory::setPublisherConfirmType);
 		cachingConnectionFactory.afterPropertiesSet();
 		return cachingConnectionFactory;
 	}
@@ -108,6 +127,8 @@ public class RabbitMqConfig{
 				.to(connectionFactory::setConnectionTimeout);
 		connectionFactory.setAutomaticRecoveryEnabled(Boolean.TRUE);
 		connectionFactory.setExceptionHandler(rabbitConnectionExceptionHandler);
+		//当容器停止时 如果有消息没有处理完成，则最大等待多长时间后才关闭容器;默认值为10000
+		connectionFactory.setShutdownTimeout(60000);
 		return connectionFactory;
 	}
 
@@ -135,6 +156,7 @@ public class RabbitMqConfig{
 					.asInt(Duration::toMillis)
 					.to(exponentialBackOffPolicy::setInitialInterval);
 			retryTemplate.setBackOffPolicy(exponentialBackOffPolicy);
+			retryTemplate.setThrowLastExceptionOnExhausted(Boolean.TRUE);
 		}
 		return retryTemplate;
 	}

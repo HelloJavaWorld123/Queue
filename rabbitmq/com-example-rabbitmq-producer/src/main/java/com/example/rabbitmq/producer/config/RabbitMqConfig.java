@@ -117,6 +117,13 @@ public class RabbitMqConfig{
 	}
 
 
+	/**
+	 * 在启动时 RabbitAdmin会根据绑定的Queue、Exchange、binding调用RabbitTemplate,创建Queue,Exchange,Binding,Channel
+	 * @see org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer#redeclareElementsIfNecessary()
+	 * 如果设置了
+	 * @see org.springframework.boot.autoconfigure.amqp.RabbitProperties.SimpleContainer#missingQueuesFatal
+	 * 则必须要有一个自定义的AmqpAdmin 否则启动报错
+	 */
 	@Bean
 	@ConditionalOnMissingBean(value = RabbitAdmin.class)
 	public RabbitAdmin rabbitAdmin(RabbitTemplate rabbitTemplate,DirectExchange directExchange,Queue queue,Binding binding){

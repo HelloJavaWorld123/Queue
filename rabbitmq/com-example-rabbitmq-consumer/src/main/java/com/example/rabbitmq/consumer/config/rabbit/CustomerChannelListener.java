@@ -1,4 +1,4 @@
-package com.example.rabbitmq.consumer.config;
+package com.example.rabbitmq.consumer.config.rabbit;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;

@@ -1,4 +1,4 @@
-package com.example.rabbitmq.consumer.config;
+package com.example.rabbitmq.consumer.config.rabbit;
 
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.listener.api.RabbitListenerErrorHandler;

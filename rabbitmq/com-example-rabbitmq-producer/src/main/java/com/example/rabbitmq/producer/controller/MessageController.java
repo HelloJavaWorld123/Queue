@@ -4,6 +4,7 @@ import com.example.rabbit.common.enums.RabbitMqEnum;
 import com.example.rabbitmq.producer.service.RabbitMqSendMessageService;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,11 +23,11 @@ public class MessageController{
 
 
 	@RequestMapping("/send")
-	public String send(){
+	public ResponseEntity<String> send(){
 		CorrelationData correlationData = new CorrelationData();
 		correlationData.setId("1");
 		sendMessageService.sendMessage(RabbitMqEnum.ExchangeEnum.TEST_DIRECT_EXCHANGE.name(),RabbitMqEnum.RoutingKey.TEST_ROUTING_KEY.name(),"111111111",correlationData);
-		return "发送成功";
+		return ResponseEntity.ok().body("发送成功");
 	}
 
 
