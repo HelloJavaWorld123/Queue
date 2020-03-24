@@ -37,5 +37,16 @@ public interface RabbitMqSendMessageService{
 	void sendMessage(String exchange,String routingKey,String message);
 	void sendMessage(String exchange,String routingKey,String message,CorrelationData correlationData);
 
+	/**
+	 * 使用同一个通道 发送消息 直到所有的消息被客户端确认后 才将channel关闭或者返回到链接池中
+	 */
+	void sendMessageByOneChannel(String exchange, String routingKey, String message, CorrelationData correlationData);
+
+	/**
+	 * 在同一个Channel中执行所有的操作，并等待客户端的确认
+	 * @return
+	 */
+	String sendMessageByOneChannelAndCallBack(String exchange, String routingKey, String message, CorrelationData correlationData);
+
 
 }

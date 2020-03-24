@@ -57,6 +57,15 @@
    
     CacheConnectionFactory
         1. org.springframework.amqp.rabbit.connection.CachingConnectionFactory.newRabbitConnectionFactory -- 创建了Rabbit ConnectionFactory,并将AutomicRecovery设置为False
+        2. CacheMode:
+            2.1 Channel
+                2.1.1 size 缓存中Channel的数量
+                2.1.2 checkTimeOut：如果为零，则Channel不会被复用,每次获取会创建新的Channel;大于零时会在CheckTimeOut时间内复用缓存中的Channel
+            2.2 Connection
+                2.2.1 model: 设置Cache的方式;默认方式为Channel;
+                2.2.2 size: 缓存中链接的数量;当且仅当CacheModel为Connection时，该值的大小起作用；如果CacheModel为Channel，则该值为1;
+                    备注：如果CacheModel为Channel,并且配置了Connection的Size,启动报错:[java.lang.IllegalArgumentException: When the cache mode is 'CHANNEL', the connection cache size cannot be configured.]
+                
 - RabbitTemplate
 
       1.1
@@ -88,7 +97,8 @@
       8. consumerBatchEnabled:
       
       
-      
+- MessageBuilder
+    - . 消息体的构建
 - RabbitAdmin
 
       1.Exchange
@@ -105,12 +115,23 @@
         3.4. autoDelete -- 当队列很长时间不再使用时,Server是否自动删除. 时间是多长???
         3.5. actualName -- 如果name不为空,则使用name的值.否则使用:spring.gen-UUID_awaiting_declaration.(参考:org.springframework.amqp.core.Base64UrlNamingStrategy.generateName)
 - @RabbitListener
+    1.
 - @RabbitListeners
+    1. 支持 @RabbitListener 的 @Repeatable,
 - @RabbitHandler
+    1.根据方法的签名的不同，接收不同的消息
+    2.isDefault() 表示当前的方法是否是默认的接收消息的方法
 - @PayLoad
+    1. 在接收消息的方法签名上使用,指定消息的Body信息;按照Body的类型处理消息
 - @Header
-- Channel: Prefetch Count: 设置Channel或者Queue上堆积消息的数量.false:指定的Queue上未被处理的消息最大数量.
-           true:Channel上未被处理的消息的最大数量.影响到客户端的吞吐量(Tell the broker how many messages to send to each consumer in a single request)
+    1. 在接收消息的方法签名上使用，指定能够处理的消息的头部相关的信息
+- @SendTo
+    1. 消息处理后的回复信息.(比如:标注在类上，统一回复)
+    2. 支持SpEl表达式(eg: @SendTo("!{'some.reply.queue.with.' + result.queueName}"))
+- Channel: [Prefetch Count](https://www.rabbitmq.com/blog/2012/05/11/some-queuing-theory-throughput-latency-and-bandwidth/): 
+            客户端从Queue中获取消息的预期值。Spring Boot的默认值为250
+            设置Channel或者Queue上堆积消息的数量.false:指定的Queue上未被处理的消息最大数量.
+            true:Channel上未被处理的消息的最大数量.影响到客户端的吞吐量(Tell the broker how many messages to send to each consumer in a single request)
 - BlockingQueueConsumer:
 
 
@@ -138,3 +159,4 @@
        1.2 增加*spring-boot-starter-actuator* 会使用RabbitTemplate进行链接测试
     2.死信队列(延迟队列)
     3.Transactional
+    4.序列化和反序列化

@@ -11,7 +11,8 @@ public enum RabbitMqEnum{
 		/**
 		 * 测试 单播 交换机
 		 */
-		TEST_DIRECT_EXCHANGE
+		TEST_DIRECT_EXCHANGE,
+		TEST_FANOUT_EXCHANGE
 		;
 	}
 
@@ -19,7 +20,10 @@ public enum RabbitMqEnum{
 		/**
 		 * 测试队列
 		 */
-		TEST_QUEUE
+		TEST_QUEUE,
+		TEST_ONE_EXCHANGE_QUEUES_ONE,
+		TEST_ONE_EXCHANGE_QUEUES_TWO,
+		TEST_DURABLE_QUEUE
 		;
 	}
 
@@ -27,7 +31,8 @@ public enum RabbitMqEnum{
 		/**
 		 * 测试路由key
 		 */
-		TEST_ROUTING_KEY
+		TEST_ROUTING_KEY,
+		TEST_ONE_EXCHANGE_BINDING_TWO_QUEUES
 		;
 	}
 }

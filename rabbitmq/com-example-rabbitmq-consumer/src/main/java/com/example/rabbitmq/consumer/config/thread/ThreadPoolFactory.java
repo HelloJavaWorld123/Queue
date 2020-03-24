@@ -3,6 +3,7 @@ package com.example.rabbitmq.consumer.config.thread;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.ExecutorService;
@@ -33,6 +34,12 @@ public class ThreadPoolFactory{
 		executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
 		executor.afterPropertiesSet();
 		return executor;
+	}
+
+	@Bean
+	@ConditionalOnMissingBean(SimpleAsyncTaskExecutor.class)
+	public SimpleAsyncTaskExecutor simpleAsyncTaskExecutor(){
+		return new SimpleAsyncTaskExecutor("consumer-task-");
 	}
 
 

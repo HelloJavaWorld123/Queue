@@ -15,7 +15,7 @@ spring:
         #Cache mode 的默认值
         mode: channel
         # 该值当 Cache mode 是 Connection 才有用
-        #size: 10
+        size: 10
       channel:
         #SessionSize
         size: 10

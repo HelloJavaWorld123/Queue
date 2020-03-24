@@ -8,6 +8,8 @@ import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistrar;
  * @author : RXK
  * Date : 2020/3/23 15:07
  * Desc: 为 Endpoint 自定义 RabbitListenerConenctionFactory
+ *
+ * 或者代替 @RabbitListener  自定义配置所有的信息
  */
 public class CustomerRabbitEndpointConnectionFactory implements RabbitListenerConfigurer{
 
