@@ -1,4 +1,4 @@
-package com.example.rabbitmq.consumer.config.rabbit;
+package com.example.rabbitmq.consumer.config.rabbit.errorhandler;
 
 import com.example.rabbit.common.utils.LoggerUtils;
 import org.springframework.stereotype.Component;

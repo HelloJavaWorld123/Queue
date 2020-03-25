@@ -98,7 +98,12 @@
       10.DebatchEnable: 是否支持批量处理(与Batch Size 和 ConsumerBatchEnable 一起使用)
       10.defaultRequeueRejected:当消费者无法消费时(或者Listener抛出异常或者ContentType无法解析)，
                                 是否将消息重新入队；默认值为：true;并抛出{AmqpRejectAndDontRequeueException}
-      11.ErrorHandler: 处理在异步执行Task任务时，抛出的异常。以及在启动时是否能够连接到服务器的异常
+      11.ErrorHandler: 处理在异步执行Task任务时，抛出的异常。以及在启动时是否能够连接到服务器的异常.默认使用：ConditionalRejectingErrorHandler
+        11.1 方案一:实现ErrorHandler接口，自定义处理相关异常的逻辑
+        11.2 方案二：默认使用的ConditionRejectionErrorHandler,通过Exception的类型处理不同的逻辑,默认的策略是:[org.springframework.amqp.rabbit.listener.ConditionalRejectingErrorHandler.DefaultExceptionStrategy]
+        其中 isFatal()方法决定当前的异常是否是致命的。可以继承(DefaultExceptionStrategy)决定什么异常属于属于致命的异常，然后再入队。
+        11.3 出现异常后，根据异常的种类判断消息是否入死信队列
+            11.3.1 异常是:AmqpRejectAndDontRequeueException,并且不是致命的，则将消息加入死信队列
       12.AutoStartUp: 当前监听器容器是否自动启动;默认值为True.如果设置成False,则手动调用[org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.start]方法启动监听器容器
       13.AcknowledgeMode:设置消费者的确认模式;如果要支持事务则必须为(AUTO 或者 MANUAL)模式
       14.MessageConverter:自定义实现从Message到Java Object或者Java Object 到Message 的转换.包括如下几种形式:
@@ -118,6 +123,9 @@
       18.IdleEventInterval:
       19.TaskExcutor: 设置执行任务的线程池;
                       默认为:SimpleAsyncTaskExecutor,缺点是:线程不复用,每个Task重新创建一个线程;
+                      在创建自己的Task线程池时要注意线程池中线程的数量要满足任务的最大数量
+      20.TransactionManager:
+      21.ChannelTransacted:
       
       
 - MessageBuilder

@@ -1,5 +1,7 @@
 package com.example.rabbitmq.consumer.config.rabbit;
 
+import com.example.rabbitmq.consumer.config.rabbit.errorhandler.CustomerExceptionStrategy;
+import com.example.rabbitmq.consumer.config.rabbit.errorhandler.RabbitErrorHandler;
 import com.example.rabbitmq.consumer.modal.Person;
 import com.rabbitmq.client.ConnectionFactory;
 import org.springframework.amqp.core.AcknowledgeMode;
@@ -7,9 +9,11 @@ import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerEndpoint;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.listener.ConditionalRejectingErrorHandler;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.converter.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -39,6 +43,9 @@ public class RabbitMqConfig{
 	private final RabbitProperties rabbitProperties;
 
 	private final RabbitErrorHandler rabbitErrorHandler;
+
+	@Autowired
+	private CustomerExceptionStrategy customerExceptionStrategy;
 
 	private final ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
@@ -93,7 +100,8 @@ public class RabbitMqConfig{
 		listenerContainer.setDefaultRequeueRejected(Boolean.TRUE);
 
 		//自定义错误处理器
-		listenerContainer.setErrorHandler(rabbitErrorHandler);
+//		listenerContainer.setErrorHandler(rabbitErrorHandler);
+		listenerContainer.setErrorHandler(new ConditionalRejectingErrorHandler(customerExceptionStrategy));
 
 		//消息与实体类之间序列化和反序列化方式
 		//根据Content-Type 的类型 反序列化 消息的类类型
