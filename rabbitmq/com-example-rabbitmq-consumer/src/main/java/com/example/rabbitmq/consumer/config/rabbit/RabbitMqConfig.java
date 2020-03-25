@@ -84,7 +84,13 @@ public class RabbitMqConfig{
 
 		listenerContainer.setReceiveTimeout(60000L);
 		listenerContainer.setRetryTemplate(retryTemplate);
+		//default 5000
+		listenerContainer.setFailedDeclarationRetryInterval(5000L);
+
 		listenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+
+		//当消费者不能处理该消息而拒绝时，将消息重新入队 默认值为true
+		listenerContainer.setDefaultRequeueRejected(Boolean.TRUE);
 
 		//自定义错误处理器
 		listenerContainer.setErrorHandler(rabbitErrorHandler);

@@ -13,10 +13,13 @@ import org.springframework.amqp.support.converter.ClassMapper;
 import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.PropertyMapper;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
@@ -105,6 +108,10 @@ public class RabbitMqConfig{
 		factory.addChannelListener(customerChannelListener);
 		//添加自定义的connection的监听器
 		factory.addConnectionListener(customerConnectionListener);
+
+		//结合 Event发布事件
+//		factory.setApplicationEventPublisher(applicationEventPublisher);
+
 		factory.afterPropertiesSet();
 		return factory;
 	}
@@ -125,7 +132,10 @@ public class RabbitMqConfig{
 		return factory;
 	}
 
-	@Bean
+	/**
+	 * event-exchange-plugin is enabled
+	 */
+//	@Bean
 	public BrokerEventListener brokerEventListener(CachingConnectionFactory cachingConnectionFactory){
 		return new BrokerEventListener(cachingConnectionFactory,"user.#,channel.#,queue.#");
 	}

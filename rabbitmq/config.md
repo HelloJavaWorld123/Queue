@@ -84,17 +84,40 @@
         
       1.1
 - BatchingRabbitTemplate
-- AbstractRabbitListenerContainerFactory
+- AbstractRabbitListenerContainerFactory(e.g:org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory)
 
-      1. batch Size:
-      n. missingQueuesFatal
+      1. missingQueuesFatal: 当Queue不能使用时,是否快速停止当前的容器上下文
       2. concurrentConsumers: 默认值为1
-      3. maxConcurrentConsumers: 
-      4. startConsumerMinInterval:
-      5. stopConsumerMinInterval:
+      3. maxConcurrentConsumers: 除了{concurrentConsumers},最多多少个消费者(在当前消费者无法消费时，会自动的启动多余的消费者)
+      4. startConsumerMinInterval: 启动其他消费者的最大时间间隔
+      5. stopConsumerMinInterval: 停止其他的消费者最小的时间间隔
       6. consecutiveActiveTrigger:
       7. consecutiveIdleTrigger:
-      8. consumerBatchEnabled:
+      8. batch Size: 批量处理的数量。会以当前数量循环获取消息数量，进行批处理
+      9. consumerBatchEnabled: 批量消费消息
+      10.DebatchEnable: 是否支持批量处理(与Batch Size 和 ConsumerBatchEnable 一起使用)
+      10.defaultRequeueRejected:当消费者无法消费时(或者Listener抛出异常或者ContentType无法解析)，
+                                是否将消息重新入队；默认值为：true;并抛出{AmqpRejectAndDontRequeueException}
+      11.ErrorHandler: 处理在异步执行Task任务时，抛出的异常。以及在启动时是否能够连接到服务器的异常
+      12.AutoStartUp: 当前监听器容器是否自动启动;默认值为True.如果设置成False,则手动调用[org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.start]方法启动监听器容器
+      13.AcknowledgeMode:设置消费者的确认模式;如果要支持事务则必须为(AUTO 或者 MANUAL)模式
+      14.MessageConverter:自定义实现从Message到Java Object或者Java Object 到Message 的转换.包括如下几种形式:
+        14.1 SimpleMessageConverter:默认的消息转换器
+        14.2 Jackson2JsonMessageConverter:使用的比较多，支持灵活的从Message到Java Object的转化;
+        14.3 Jackson2XmlMessageConverter:
+        14.4 SmartMessageConverter
+        14.5 ContentTypeDelegatingMessageConverter:支持根据具体的ContentType,对应具体的MessageConverter
+            14.5.1 e.g: application/json --> Jackson2JsonMessageConverter;application/xml-->Jackson2XmlMessageConverter;
+        14.6 MarshallingMessageConverter
+        14.7 MessagingMessageConverter
+        14.8 SerializerMessageConverter
+        14.9 WhiteListDeserializingMessageConverter
+      15.FailedDeclarationRetryInterval:
+      16.RetryTemplate: 设置重试Template的句柄
+      17.ReceiveTimeOut:
+      18.IdleEventInterval:
+      19.TaskExcutor: 设置执行任务的线程池;
+                      默认为:SimpleAsyncTaskExecutor,缺点是:线程不复用,每个Task重新创建一个线程;
       
       
 - MessageBuilder
@@ -157,6 +180,8 @@
        1.1 实现[com.rabbitmq.client.ExceptionHandler]接口.其实每次启动都会检查,
             只是在日志没有被打印出来.实现上面的接口,打印日志就会发现异常信息.
        1.2 增加*spring-boot-starter-actuator* 会使用RabbitTemplate进行链接测试
-    2.死信队列(延迟队列)
-    3.Transactional
-    4.序列化和反序列化
+    2.死信队列
+    3.延迟队列
+        3.1 方案一：在RabbitMq3.6.0中有延迟插件,在发送消息时：通过MessageProperties设置message的头部：Set the x-delay header
+    4.Transactional
+    5.序列化和反序列化
