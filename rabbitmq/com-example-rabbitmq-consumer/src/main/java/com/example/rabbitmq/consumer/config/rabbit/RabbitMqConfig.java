@@ -13,7 +13,6 @@ import org.springframework.amqp.rabbit.listener.ConditionalRejectingErrorHandler
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.converter.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -25,6 +24,7 @@ import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.util.backoff.ExponentialBackOff;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -44,26 +44,29 @@ public class RabbitMqConfig{
 
 	private final RabbitErrorHandler rabbitErrorHandler;
 
-	@Autowired
-	private CustomerExceptionStrategy customerExceptionStrategy;
-
 	private final ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
 	private final SimpleAsyncTaskExecutor simpleAsyncTaskExecutor;
 
 	private final CustomerChannelListener customerChannelListener;
 
+	private final CustomerExceptionStrategy customerExceptionStrategy;
+
 	private final CustomerConnectionListener customerConnectionListener;
+
+	private final CustomerConsumerTagStrategy customerConsumerTagStrategy;
 
 	private final RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler;
 
-	public RabbitMqConfig(RabbitProperties rabbitProperties, RabbitErrorHandler rabbitErrorHandler, ThreadPoolTaskExecutor threadPoolTaskExecutor, SimpleAsyncTaskExecutor simpleAsyncTaskExecutor, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler){
+	public RabbitMqConfig(RabbitProperties rabbitProperties, RabbitErrorHandler rabbitErrorHandler, CustomerExceptionStrategy customerExceptionStrategy, ThreadPoolTaskExecutor threadPoolTaskExecutor, SimpleAsyncTaskExecutor simpleAsyncTaskExecutor, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, CustomerConsumerTagStrategy customerConsumerTagStrategy, RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler){
 		this.rabbitProperties = rabbitProperties;
 		this.rabbitErrorHandler = rabbitErrorHandler;
+		this.customerExceptionStrategy = customerExceptionStrategy;
 		this.threadPoolTaskExecutor = threadPoolTaskExecutor;
 		this.simpleAsyncTaskExecutor = simpleAsyncTaskExecutor;
 		this.customerChannelListener = customerChannelListener;
 		this.customerConnectionListener = customerConnectionListener;
+		this.customerConsumerTagStrategy = customerConsumerTagStrategy;
 		this.rabbitConnectionExceptionHandler = rabbitConnectionExceptionHandler;
 	}
 
@@ -72,6 +75,8 @@ public class RabbitMqConfig{
 	 * 该Bean 的name(rabbitListenerContainerFactory) 是注解@RabbitListener的ContainerFacotory的默认取值
 	 */
 	/**
+	 * 创建 SimpleMessageListenerContainer 的工厂
+	 * <p>
 	 * SMLC -- SimpleRabbitListenerContainerFactory
 	 * 1.BatchSize
 	 * 2.消费者的数量自动的缩容
@@ -81,85 +86,110 @@ public class RabbitMqConfig{
 	 */
 	@Bean
 	@ConditionalOnMissingBean(MessageListenerContainer.class)
-	public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(CachingConnectionFactory cachingConnectionFactory,RetryTemplate retryTemplate,ContentTypeDelegatingMessageConverter contentTypeDelegatingMessageConverter){
-		SimpleRabbitListenerContainerFactory listenerContainer = new SimpleRabbitListenerContainerFactory();
-		listenerContainer.setConnectionFactory(cachingConnectionFactory);
-		listenerContainer.setAutoStartup(Boolean.TRUE);
+	public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(CachingConnectionFactory cachingConnectionFactory, RetryTemplate retryTemplate, ContentTypeDelegatingMessageConverter contentTypeDelegatingMessageConverter){
+		SimpleRabbitListenerContainerFactory simpleRabbitListenerContainerFactory = new SimpleRabbitListenerContainerFactory();
+		simpleRabbitListenerContainerFactory.setConnectionFactory(cachingConnectionFactory);
+		simpleRabbitListenerContainerFactory.setAutoStartup(Boolean.TRUE);
 
-		listenerContainer.setConcurrentConsumers(1);
-		listenerContainer.setMaxConcurrentConsumers(8);
+		simpleRabbitListenerContainerFactory.setConcurrentConsumers(1);
+		simpleRabbitListenerContainerFactory.setMaxConcurrentConsumers(8);
 
-		listenerContainer.setReceiveTimeout(60000L);
-		listenerContainer.setRetryTemplate(retryTemplate);
+		simpleRabbitListenerContainerFactory.setReceiveTimeout(60000L);
+		simpleRabbitListenerContainerFactory.setRetryTemplate(retryTemplate);
 		//default 5000
-		listenerContainer.setFailedDeclarationRetryInterval(5000L);
+		simpleRabbitListenerContainerFactory.setFailedDeclarationRetryInterval(5000L);
 
-		listenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+		simpleRabbitListenerContainerFactory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
 
 		//当消费者不能处理该消息而拒绝时，将消息重新入队 默认值为true
-		listenerContainer.setDefaultRequeueRejected(Boolean.TRUE);
+		simpleRabbitListenerContainerFactory.setDefaultRequeueRejected(Boolean.TRUE);
 
 		//自定义错误处理器
-//		listenerContainer.setErrorHandler(rabbitErrorHandler);
-		listenerContainer.setErrorHandler(new ConditionalRejectingErrorHandler(customerExceptionStrategy));
+//		simpleRabbitListenerContainerFactory.setErrorHandler(rabbitErrorHandler);
+		simpleRabbitListenerContainerFactory.setErrorHandler(new ConditionalRejectingErrorHandler(customerExceptionStrategy));
 
 		//消息与实体类之间序列化和反序列化方式
 		//根据Content-Type 的类型 反序列化 消息的类类型
-		listenerContainer.setMessageConverter(contentTypeDelegatingMessageConverter);
+//		simpleRabbitListenerContainerFactory.setMessageConverter(contentTypeDelegatingMessageConverter);
+
+		//以下两个互斥
+		//会以该时间间隔尝试恢复链接,使用 FixedBackOff
+//		simpleRabbitListenerContainerFactory.setRecoveryInterval();
+		//设置指定的恢复策略 递增的方式尝试
+		simpleRabbitListenerContainerFactory.setRecoveryBackOff(new ExponentialBackOff());
+
+		simpleRabbitListenerContainerFactory.setConsumerTagStrategy(customerConsumerTagStrategy);
 
 
 		//容器空闲间隔是事件
-//		listenerContainer.setIdleEventInterval();
+//		simpleRabbitListenerContainerFactory.setIdleEventInterval();
 
 		//在队列中的queue不能使用时 是否将容器快速失败机制
-//		listenerContainer.setMissingQueuesFatal(Boolean.TRUE);
+//		simpleRabbitListenerContainerFactory.setMissingQueuesFatal(Boolean.TRUE);
 
-//		listenerContainer.setBatchListener(Boolean.TRUE);
-//		listenerContainer.setConsumerBatchEnabled(Boolean.TRUE);
-//		listenerContainer.setBatchSize(rabbitProperties.getListener().getSimple().getBatchSize());
+		//消息批处理的配置
+//		simpleRabbitListenerContainerFactory.setBatchListener(Boolean.TRUE);
+//		simpleRabbitListenerContainerFactory.setConsumerBatchEnabled(Boolean.TRUE);
+//		simpleRabbitListenerContainerFactory.setBatchSize(rabbitProperties.getListener().getSimple().getBatchSize());
+//		simpleRabbitListenerContainerFactory.setDeBatchingEnabled(Boolean.TRUE);
+//		simpleRabbitListenerContainerFactory.setBatchingStrategy();
+
+
 		//自定义线程池 默认为：SimpleAsyncTaskExecutor(线程不会复用,每一个任务创建一个新的线程)
-
-		listenerContainer.setTaskExecutor(simpleAsyncTaskExecutor);
-
-		//TODO 如果不为空 则在 ConsumerFailed 或者 idleContainer 时 推送 ListenerContainerConsumerFailedEvent 事件
-//		listenerContainer.setApplicationEventPublisher();
+		simpleRabbitListenerContainerFactory.setTaskExecutor(simpleAsyncTaskExecutor);
 
 //		When 'mismatchedQueuesFatal' is 'true', there must be exactly one AmqpAdmin in the context or you must inject one into this container;
-//		listenerContainer.setMismatchedQueuesFatal(rabbitProperties.getListener().getSimple().isMissingQueuesFatal());
+//		simpleRabbitListenerContainerFactory.setMismatchedQueuesFatal(rabbitProperties.getListener().getSimple().isMissingQueuesFatal());
+
 		//TODO
-//		listenerContainer.setChannelTransacted(true);
-//		listenerContainer.setTransactionManager();
-		return listenerContainer;
+//		simpleRabbitListenerContainerFactory.setChannelTransacted(true);
+//		simpleRabbitListenerContainerFactory.setTransactionManager();
+		return simpleRabbitListenerContainerFactory;
 	}
 
-	@Bean
-	public SimpleMessageListenerContainer simpleMessageListenerContainer(SimpleRabbitListenerContainerFactory simpleRabbitListenerContainerFactory){
-		SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
-//		endpoint.setMessageListener(message -> {
-//			message.getMessageProperties().setContentType("application/json");
-//		});
-		//默认使用的是SimpleAsyncTaskExecutor
-		endpoint.setTaskExecutor(simpleAsyncTaskExecutor);
-//		Message.addWhiteListPatterns("");
-		return simpleRabbitListenerContainerFactory.createListenerContainer(endpoint);
-	}
+//	@Bean
+//	public SimpleMessageListenerContainer simpleMessageListenerContainer(SimpleRabbitListenerContainerFactory simpleRabbitListenerContainerFactory){
+//		//如果更SimpleRabbitListenerContainerFactory设置的属性重叠 以Endpoint为准
+//		SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
+//
+////		endpoint.setMessageListener(message -> {
+////			message.getMessageProperties().setContentType("application/json");
+////		});
+//
+//		//默认使用的是SimpleAsyncTaskExecutor
+//		endpoint.setTaskExecutor(simpleAsyncTaskExecutor);
+//
+////		Message.addWhiteListPatterns("");
+//		SimpleMessageListenerContainer simpleMessageListenerContainer = simpleRabbitListenerContainerFactory.createListenerContainer(endpoint);
+//
+//		//version 1.7.x之前默认值是true  version2.0 之后默认值是False.表示事务的消息在事务回滚时是否重新入队
+//		simpleMessageListenerContainer.setAlwaysRequeueWithTxManagerRollback(Boolean.TRUE);
+//
+//		//default 300000ms
+//		simpleMessageListenerContainer.setShutdownTimeout(60000);
+//		//在shutDownTimeOut内不强制关闭通道,version2.0 以后默认值为True
+//		simpleMessageListenerContainer.setForceCloseChannel(Boolean.FALSE);
+//		//授权失败是否是致命的。如果是则在启动时,容器上下文不能被初始化.如果不是则会进入重试模式
+//		simpleMessageListenerContainer.setPossibleAuthenticationFailureFatal(Boolean.TRUE);
+//		return simpleMessageListenerContainer;
+//	}
 
 
 	@Bean
-	public ContentTypeDelegatingMessageConverter contentTypeDelegatingMessageConverter(Jackson2JsonMessageConverter jackson2JsonMessageConverter,Jackson2XmlMessageConverter jackson2XmlMessageConverter){
+	public ContentTypeDelegatingMessageConverter contentTypeDelegatingMessageConverter(Jackson2JsonMessageConverter jackson2JsonMessageConverter){
 		ContentTypeDelegatingMessageConverter messageConverter = new ContentTypeDelegatingMessageConverter();
 		Map<String, MessageConverter> contentTypeMessageConvert = new HashMap<>(2);
 		contentTypeMessageConvert.put("application/json", jackson2JsonMessageConverter);
-		contentTypeMessageConvert.put("applicaiton/xml",jackson2XmlMessageConverter);
+//		contentTypeMessageConvert.put("applicaiton/xml", jackson2XmlMessageConverter);
 		messageConverter.setDelegates(contentTypeMessageConvert);
 		return messageConverter;
 	}
 
 
-	@Bean
-	public Jackson2XmlMessageConverter jackson2XmlMessageConverter(){
-	  return new Jackson2XmlMessageConverter();
-	}
+//	@Bean
+//	public Jackson2XmlMessageConverter jackson2XmlMessageConverter(){
+//		return new Jackson2XmlMessageConverter();
+//	}
 
 	@Bean
 	public Jackson2JsonMessageConverter jackson2JsonMessageConverter(DefaultClassMapper classMapper){
@@ -191,17 +221,13 @@ public class RabbitMqConfig{
 		RabbitProperties.Cache.Channel channel = rabbitProperties.getCache().getChannel();
 		mapper.from(channel::getSize).to(cachingConnectionFactory::setChannelCacheSize);
 		//决定了 channel 是否能被复用;当为0时，每次获取都会创建一个新的channel;否则在checkoutTimeOut时间内复用已有的channel链接
-		mapper.from(channel::getCheckoutTimeout)
-				.whenNonNull()
-				.asInt(Duration::toMillis)
-				.to(cachingConnectionFactory::setChannelCheckoutTimeout);
+		mapper.from(channel::getCheckoutTimeout).whenNonNull().asInt(Duration::toMillis).to(cachingConnectionFactory::setChannelCheckoutTimeout);
 		RabbitProperties.Cache.Connection connection = rabbitProperties.getCache().getConnection();
 		mapper.from(connection::getMode).to(cachingConnectionFactory::setCacheMode);
 		cachingConnectionFactory.addChannelListener(customerChannelListener);
 		cachingConnectionFactory.addConnectionListener(customerConnectionListener);
 		mapper.from(rabbitProperties::isPublisherReturns).to(cachingConnectionFactory::setPublisherReturns);
 		mapper.from(rabbitProperties::getPublisherConfirmType).whenNonNull().to(cachingConnectionFactory::setPublisherConfirmType);
-
 
 
 		cachingConnectionFactory.afterPropertiesSet();
@@ -222,16 +248,12 @@ public class RabbitMqConfig{
 		propertyMapper.from(rabbitProperties::getPassword).to(connectionFactory::setPassword);
 		propertyMapper.from(rabbitProperties::getUsername).to(connectionFactory::setUsername);
 		propertyMapper.from(rabbitProperties::getVirtualHost).to(connectionFactory::setVirtualHost);
-		propertyMapper.from(rabbitProperties::getRequestedHeartbeat)
-				.whenNonNull()
-				.asInt(Duration::getSeconds)
-				.to(connectionFactory::setRequestedHeartbeat);
-		propertyMapper.from(rabbitProperties::getConnectionTimeout).whenNonNull().asInt(Duration::getSeconds)
-				.to(connectionFactory::setConnectionTimeout);
+		propertyMapper.from(rabbitProperties::getRequestedHeartbeat).whenNonNull().asInt(Duration::getSeconds).to(connectionFactory::setRequestedHeartbeat);
+		propertyMapper.from(rabbitProperties::getConnectionTimeout).whenNonNull().asInt(Duration::getSeconds).to(connectionFactory::setConnectionTimeout);
 		connectionFactory.setAutomaticRecoveryEnabled(Boolean.TRUE);
 		connectionFactory.setExceptionHandler(rabbitConnectionExceptionHandler);
-		//当容器停止时 如果有消息没有处理完成，则最大等待多长时间后才关闭容器;默认值为10000ms
-		connectionFactory.setShutdownTimeout(60000);
+		//当容器停止时 如果有消息没有处理完成，则最大等待多长时间后才关闭容器;默认值为10000ms 跟MessageListenerContainer 设置属性相同
+//		connectionFactory.setShutdownTimeout(60000);
 		return connectionFactory;
 	}
 
@@ -250,14 +272,8 @@ public class RabbitMqConfig{
 			retryTemplate.setRetryPolicy(simpleRetryPolicy);
 			ExponentialBackOffPolicy exponentialBackOffPolicy = new ExponentialBackOffPolicy();
 			mapper.from(rabbitProperties.getTemplate().getRetry()::getMultiplier).to(exponentialBackOffPolicy::setMultiplier);
-			mapper.from(rabbitProperties.getTemplate().getRetry()::getMaxInterval)
-					.whenNonNull()
-					.asInt(Duration::toMillis)
-					.to(exponentialBackOffPolicy::setMaxInterval);
-			mapper.from(rabbitProperties.getTemplate().getRetry()::getInitialInterval)
-					.whenNonNull()
-					.asInt(Duration::toMillis)
-					.to(exponentialBackOffPolicy::setInitialInterval);
+			mapper.from(rabbitProperties.getTemplate().getRetry()::getMaxInterval).whenNonNull().asInt(Duration::toMillis).to(exponentialBackOffPolicy::setMaxInterval);
+			mapper.from(rabbitProperties.getTemplate().getRetry()::getInitialInterval).whenNonNull().asInt(Duration::toMillis).to(exponentialBackOffPolicy::setInitialInterval);
 			retryTemplate.setBackOffPolicy(exponentialBackOffPolicy);
 			retryTemplate.setThrowLastExceptionOnExhausted(Boolean.TRUE);
 		}

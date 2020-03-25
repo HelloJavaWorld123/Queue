@@ -86,7 +86,7 @@
 - BatchingRabbitTemplate
 - AbstractRabbitListenerContainerFactory(e.g:org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory)
 
-      1. missingQueuesFatal: 当Queue不能使用时,是否快速停止当前的容器上下文
+      
       2. concurrentConsumers: 默认值为1
       3. maxConcurrentConsumers: 除了{concurrentConsumers},最多多少个消费者(在当前消费者无法消费时，会自动的启动多余的消费者)
       4. startConsumerMinInterval: 启动其他消费者的最大时间间隔
@@ -95,7 +95,8 @@
       7. consecutiveIdleTrigger:
       8. batch Size: 批量处理的数量。会以当前数量循环获取消息数量，进行批处理
       9. consumerBatchEnabled: 批量消费消息
-      10.DebatchEnable: 是否支持批量处理(与Batch Size 和 ConsumerBatchEnable 一起使用)
+      10.DebatchingEnable:是否支持批量处理的消息分批处理(与Batch Size 和 ConsumerBatchEnable 一起使用)
+      11.batchingStrategy:消息分批处理的策略 
       10.defaultRequeueRejected:当消费者无法消费时(或者Listener抛出异常或者ContentType无法解析)，
                                 是否将消息重新入队；默认值为：true;并抛出{AmqpRejectAndDontRequeueException}
       11.ErrorHandler: 处理在异步执行Task任务时，抛出的异常。以及在启动时是否能够连接到服务器的异常.默认使用：ConditionalRejectingErrorHandler
@@ -124,14 +125,38 @@
       19.TaskExcutor: 设置执行任务的线程池;
                       默认为:SimpleAsyncTaskExecutor,缺点是:线程不复用,每个Task重新创建一个线程;
                       在创建自己的Task线程池时要注意线程池中线程的数量要满足任务的最大数量
-      20.TransactionManager:
-      21.ChannelTransacted:
+      20.ChannelTransacted: 标志是否支持事务。默认值为:false 
+      21.TransactionManager: 当ChannelTransacted设置为true时,transactionManager扩展自定义的事务管理器
+      22.RecoveryInterval:自动恢复链接的时间间隔(FixedBackOff),与RecoveryBackOff属性互斥.
+      23.RecoveryBackOff:自动恢复链接使用的策略,与RecoveryInterval互斥,使用指定的策略
+        23.1.FixedBackOff：固定的时间间隔检查恢复链接
+        23.2.ExponentialBackOff：按照倍数递增的方式恢复链接：
+            从{DEFAULT_INITAL_INTERVAL}开始,每次递增{DEFAULT_INITAL_INTERVAL+DEFAULT_INITAL_INTERVAL*MULITIPLIER},最大为{DEFAULT_MAX_INTERVAL}
+            DEFAULT_INITAL_INTERVAL:2000L
+            MULITIPLIER = 0.5
+            DEFAULT_MAX_INTERVAL:30000L
       
       
+- AbstractMessageListenerContainer
+
+
+    1.alwaysRequeueWithTxManagerRollback: 事务回滚时,消息是否重新入队
+    2.transactionAttribute      
+    3.shutDownTimeOut:容器关闭时,等待消息处理完毕的超时时间,默认为300000ms
+    4.forceCloseChannel:在shutDownTimeOut时间内,如果有消息再处理也就是工作(Workers)状态,是否强制关闭Channel,V2.0以后默认为True.
+    5.possibleAuthenticationFailureFatal:授权失败是否是致命的。如果是则在启动时,容器上下文不能被初始化.如果不是则会进入重试模式
+    6.missingQueuesFatal: 当Queue不能使用时,是否停止当前的容器上下文.
+    7.autoDeclare: 依赖RabbitAdmin对象.启动时或者队列自动删除后是否重新自动的创建.
+    8.declarationRetries:创建失败时 重试的次数.依赖RabbitAdmin对象
+    9.RetryDeclarationInterval:重试创建的时间间隔.依赖RabbitAdmin对象
+    10.FailedDeclarationRetryInterval:创建失败时重试的时间间隔.依赖RabbitAdmin对象
 - MessageBuilder
     - . 消息体的构建
 - RabbitAdmin
 
+      在启动时,声明所有的Queue、Exchange、Binding;或者如果存在auto_delete的Queue,Exchange,再使用时也会使用该RabbitAdmin重新创建缺失的Queue，Exchange
+      如果autoDeclare设置为True,则必须提供该RabbitAdmin对象
+      
       1.Exchange
         1.1. DirectExchange -- 
         1.2. FanoutExchange --
@@ -164,6 +189,7 @@
             设置Channel或者Queue上堆积消息的数量.false:指定的Queue上未被处理的消息最大数量.
             true:Channel上未被处理的消息的最大数量.影响到客户端的吞吐量(Tell the broker how many messages to send to each consumer in a single request)
 - BlockingQueueConsumer:
+- AmqpAppender:日志发送相关配置
 
 
 # 消息的确认机制
@@ -188,7 +214,7 @@
        1.1 实现[com.rabbitmq.client.ExceptionHandler]接口.其实每次启动都会检查,
             只是在日志没有被打印出来.实现上面的接口,打印日志就会发现异常信息.
        1.2 增加*spring-boot-starter-actuator* 会使用RabbitTemplate进行链接测试
-    2.死信队列
+    2.死信队列(Dead Latter Queue)
     3.延迟队列
         3.1 方案一：在RabbitMq3.6.0中有延迟插件,在发送消息时：通过MessageProperties设置message的头部：Set the x-delay header
     4.Transactional

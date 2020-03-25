@@ -16,6 +16,6 @@ public class CustomerBrokerEventListener implements ApplicationListener<BrokerEv
 
 	@Override
 	public void onApplicationEvent(BrokerEvent event){
-		LoggerUtils.info("-----------------接收到的Event的是：{"+event.toString()+"}-------------------------");
+		LoggerUtils.info("接收到的Event的是：{"+event.toString()+"}");
 	}
 }

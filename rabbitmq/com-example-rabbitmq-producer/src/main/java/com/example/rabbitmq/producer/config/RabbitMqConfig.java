@@ -173,7 +173,7 @@ public class RabbitMqConfig{
 	 */
 	@Bean
 	public Queue durableQueue(){
-		return QueueBuilder.durable(RabbitMqEnum.QueueEnum.TEST_DURABLE_QUEUE.name()).exclusive().withArgument("Durable_Queue","1234567890").build();
+		return QueueBuilder.durable(RabbitMqEnum.QueueEnum.TEST_DURABLE_QUEUE.name()).withArgument("Durable_Queue","1234567890").build();
 	}
 
 	@Bean

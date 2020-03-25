@@ -26,6 +26,6 @@ import org.springframework.stereotype.Component;
 public class RabbitApplicationListener implements ApplicationListener<ListenerContainerConsumerFailedEvent>{
 	@Override
 	public void onApplicationEvent(ListenerContainerConsumerFailedEvent event){
-		LoggerUtils.info("---------------接收到 ConsumerFailedEvent事件:{"+event.toString()+"}---------------------");
+		LoggerUtils.info("接收到 ConsumerFailedEvent事件:{"+event.toString()+"}");
 	}
 }

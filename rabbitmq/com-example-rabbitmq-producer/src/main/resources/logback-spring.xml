@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="true">
+
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
+    <conversionRule conversionWord="wex" converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
+    <conversionRule conversionWord="wEx" converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter" />
+    <!-- 彩色日志格式 -->
+    <property name="CONSOLE_LOG_PATTERN" value="${CONSOLE_LOG_PATTERN:-%clr(%d{yyyy-MM-dd HH:mm:ss}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>info</level>
+        </filter>
+        <encoder>
+            <Pattern>${CONSOLE_LOG_PATTERN}</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+
+    <appender name="AMQP" class="org.springframework.amqp.rabbit.logback.AmqpAppender">
+        <layout>
+            <pattern><![CDATA[ %d{yyyy-MM-dd HH:mm:ss} %p %t [%c] - <%m>%n ]]></pattern>
+        </layout>
+        <host>127.0.0.1</host>
+        <port>5672</port>
+        <username>all_virtual_host_admin</username>
+        <password>root</password>
+        <virtualHost>virtual_host_test</virtualHost>
+
+
+        <exchangeType>direct</exchangeType>
+        <exchangeName>log</exchangeName>
+        <contentType>application/json</contentType>
+        <autoDelete>false</autoDelete>
+        <declareExchange>true</declareExchange>
+        <!-- <abbreviation>36</abbreviation --> <!-- no category abbreviation by default -->
+        <applicationId>AmqpAppenderTest</applicationId>
+        <routingKeyPattern>producer-log</routingKeyPattern>
+        <generateId>true</generateId>
+        <charset>UTF-8</charset>
+        <durable>true</durable>
+        <deliveryMode>NON_PERSISTENT</deliveryMode>
+    </appender>
+
+    <logger name="org.springframework.amqp" level="DEBUG">
+        <appender-ref ref="AMQP"/>
+    </logger>
+    <logger name="org.springframework.retry" level="DEBUG">
+        <appender-ref ref="AMQP"/>
+    </logger>
+    <logger name="com.rabbitmq" level="DEBUG">
+        <appender-ref ref="AMQP"/>
+    </logger>
+
+
+    <root level="DEBUG">
+        <appender-ref ref="AMQP"/>
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+
+</configuration>

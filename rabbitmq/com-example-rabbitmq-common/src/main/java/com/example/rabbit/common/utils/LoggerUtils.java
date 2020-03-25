@@ -15,11 +15,11 @@ public class LoggerUtils{
 
 
 	public static void info(String message){
-		LOGGER.info(message);
+		LOGGER.info("------------{"+message+"}--------------");
 	}
 
 	public static void error(String message,Throwable throwable){
-		LOGGER.error(message,throwable);
+		LOGGER.error("------------{}:{}-----------",message,throwable);
 	}
 
 

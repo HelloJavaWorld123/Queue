@@ -26,7 +26,7 @@ import java.lang.annotation.*;
 @Repeatable(value = CustomerRabbitListeners.class)
 public @interface CustomerRabbitListener{
 
-	@AliasFor(annotation = QueueBinding.class,attribute = "value")
+//	@AliasFor(annotation = QueueBinding.class,attribute = "value")
 	Queue value();
 }
 

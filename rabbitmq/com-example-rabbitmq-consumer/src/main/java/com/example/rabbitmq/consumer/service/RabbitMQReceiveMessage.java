@@ -26,7 +26,7 @@ public class RabbitMQReceiveMessage extends AbstractRabbitMqMessage{
 		logger.info("--------消息是:{}------",s);
 		logger.info("--------消息体是:{}------",body);
 		try{
-			channel.basicNack(message.getMessageProperties().getDeliveryTag(),false,true);
+			channel.basicAck(message.getMessageProperties().getDeliveryTag(),false);
 		} catch(IOException e){
 			logger.error("---Consumer---消费出现异常:-----",e);
 			try{
