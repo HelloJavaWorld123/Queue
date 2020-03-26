@@ -18,7 +18,7 @@ import java.io.IOException;
 public class LogMessageListener extends  AbstractRabbitMqMessage{
 
 	@Override
-	@RabbitListener(queuesToDeclare = @Queue(name = "producer-logInfo",durable = "true",declare = "true",autoDelete = "false"))
+	@RabbitListener(queuesToDeclare = @Queue(name = "producer-logInfo",durable = "true",autoDelete = "false"))
 	void receiveMessage(Message message, Channel channel){
 		LoggerUtils.info(message.toString());
 		try{

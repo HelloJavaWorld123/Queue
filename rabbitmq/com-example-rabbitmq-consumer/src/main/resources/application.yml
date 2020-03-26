@@ -12,3 +12,5 @@ logging:
 spring:
   profiles:
     active: local
+  application:
+    name: rabbit_consumer_one

@@ -1,4 +1,4 @@
-package com.example.rabbitmq.consumer.config.rabbit;
+package com.example.rabbitmq.consumer.config.event;
 
 import com.example.rabbit.common.utils.LoggerUtils;
 import org.springframework.amqp.rabbit.listener.ListenerContainerConsumerFailedEvent;
@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
  * ListenerContainerIdleEvent: 检测空闲的异步使用者 .
  */
 @Component
-public class RabbitApplicationListener implements ApplicationListener<ListenerContainerConsumerFailedEvent>{
+public class RabbitConsumerFailedEventListener implements ApplicationListener<ListenerContainerConsumerFailedEvent>{
 	@Override
 	public void onApplicationEvent(ListenerContainerConsumerFailedEvent event){
 		LoggerUtils.info("接收到 ConsumerFailedEvent事件:{"+event.toString()+"}");

@@ -190,6 +190,8 @@
             true:Channel上未被处理的消息的最大数量.影响到客户端的吞吐量(Tell the broker how many messages to send to each consumer in a single request)
 - BlockingQueueConsumer:
 - AmqpAppender:日志发送相关配置
+- AbstractRoutingConnectionFactory
+   1. SimpleRoutingConnectionFactory
 
 
 # 消息的确认机制
