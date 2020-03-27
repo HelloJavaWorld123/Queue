@@ -87,7 +87,7 @@
 - AbstractRabbitListenerContainerFactory(e.g:org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory)
 
       
-      2. concurrentConsumers: 默认值为1
+      2. concurrentConsumers: 创建的最小消费者数量，默认值为1;
       3. maxConcurrentConsumers: 除了{concurrentConsumers},最多多少个消费者(在当前消费者无法消费时，会自动的启动多余的消费者)
       4. startConsumerMinInterval: 启动其他消费者的最大时间间隔
       5. stopConsumerMinInterval: 停止其他的消费者最小的时间间隔
@@ -120,8 +120,8 @@
         14.9 WhiteListDeserializingMessageConverter
       15.FailedDeclarationRetryInterval:
       16.RetryTemplate: 设置重试Template的句柄
-      17.ReceiveTimeOut:
-      18.IdleEventInterval:
+      17.ReceiveTimeOut: 接收消息超时的时间
+      18.IdleEventInterval: 容器达到指定的空闲时间间隔，发出ListerContainerIdleEvent事件
       19.TaskExcutor: 设置执行任务的线程池;
                       默认为:SimpleAsyncTaskExecutor,缺点是:线程不复用,每个Task重新创建一个线程;
                       在创建自己的Task线程池时要注意线程池中线程的数量要满足任务的最大数量
@@ -189,6 +189,7 @@
             设置Channel或者Queue上堆积消息的数量.false:指定的Queue上未被处理的消息最大数量.
             true:Channel上未被处理的消息的最大数量.影响到客户端的吞吐量(Tell the broker how many messages to send to each consumer in a single request)
 - BlockingQueueConsumer:
+    
 - AmqpAppender:日志发送相关配置
 - AbstractRoutingConnectionFactory
    1. SimpleRoutingConnectionFactory
@@ -210,6 +211,18 @@
    3. ReturnCallBack:
       3.0 消息由Cluster Broker 投递到 Exchange,然后由Exchange是否成功投递到Queue时,返回的相关信息
       3.1 Mandatory: 设置为True;
+      
+# 集群
+    通过主机名称链接各个节点的；先修改host文件；
+    1.通过复制Erlang.Cookie实现
+    2.在各个节点上，都会同步Exchange、Queue、Bindings、Vhost的元数据信息；
+    3.Queue的数据信息只会保存在创建该Queue的节点上,其他的几点在同步Queue的原信息时，还会保存该Queue的owner node的指针；缺点是：当某个节点down掉时，当前节点上的数据会丢失；
+    4.磁盘节点和内存节点(一个磁盘节点，其他的都为内存节点)
+    5.镜像队列(version 2.6之后)，为了增加队列数据的高可用性以及容错性
+        会将生产者的数据分别发送到主队列和镜像队列中，确认机制是什么？？？？
+    6.高可用的队列在重新选举主节点时，会从‘最老’的节点中选举，
+      对于刚加入的节点不会被选择主节点，依赖因为后加入的从节点不会同步历史数据，如果刚加入进来就被选举为主节点那么数据将会丢失
+    7.
 # QA
 
     1.启动时不会检查配置的有效性？
