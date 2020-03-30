@@ -95,6 +95,9 @@ public class RabbitMqConfig{
 		simpleRabbitListenerContainerFactory.setConnectionFactory(cachingConnectionFactory);
 		simpleRabbitListenerContainerFactory.setAutoStartup(Boolean.TRUE);
 
+		//设置当前消费者 从queue中一次性获取消息的数量,影响消费者的吞吐量 默认值250
+//		simpleRabbitListenerContainerFactory.setPrefetchCount();
+
 		//自定义任务执行的线程池
 		simpleRabbitListenerContainerFactory.setTaskExecutor(simpleAsyncTaskExecutor);
 
@@ -147,8 +150,8 @@ public class RabbitMqConfig{
 //		When 'mismatchedQueuesFatal' is 'true', there must be exactly one AmqpAdmin in the context or you must inject one into this container;
 //		simpleRabbitListenerContainerFactory.setMismatchedQueuesFatal(rabbitProperties.getListener().getSimple().isMissingQueuesFatal());
 
-		//TODO
-//		simpleRabbitListenerContainerFactory.setChannelTransacted(true);
+		//RabbitMq的事务配置 当前的Channel是否是事务的
+//		simpleRabbitListenerContainerFactory.setChannelTransacted(Boolean.TRUE);
 //		simpleRabbitListenerContainerFactory.setTransactionManager();
 		return simpleRabbitListenerContainerFactory;
 	}
@@ -177,6 +180,8 @@ public class RabbitMqConfig{
 		simpleMessageListenerContainer.setForceCloseChannel(Boolean.FALSE);
 		//授权失败是否是致命的。如果是则在启动时,容器上下文不能被初始化.如果不是则会进入重试模式
 		simpleMessageListenerContainer.setPossibleAuthenticationFailureFatal(Boolean.TRUE);
+		//默认值为True
+//		simpleMessageListenerContainer.setDefaultRequeueRejected(Boolean.FALSE);
 		return simpleMessageListenerContainer;
 	}
 

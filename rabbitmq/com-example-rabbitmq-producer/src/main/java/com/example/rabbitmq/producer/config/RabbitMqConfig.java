@@ -22,12 +22,15 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author : RXK
@@ -163,6 +166,35 @@ public class RabbitMqConfig{
 	}
 
 	@Bean
+	public Queue deadLetterArgQueue(){
+		return QueueBuilder
+				.durable(RabbitMqEnum.QueueEnum.TEST_X_DEAD_LETTER_EXCHANGE_ARG.name())
+				.build();
+	}
+
+
+	@Bean
+	public Queue logQueue(){
+		return QueueBuilder.durable(RabbitMqEnum.QueueEnum.TEST_LOG_QUEUE.name())
+				.deadLetterExchange(RabbitMqEnum.ExchangeEnum.TEST_DEAD_LETTER_EXCHANGE.name())
+				.deadLetterRoutingKey(RabbitMqEnum.RoutingKey.TEST_DEAD_LETTER_EXCHANGE_KEY.name())
+				.build();
+	}
+
+	@Bean
+	public TopicExchange deadLetterExchange(){
+		return ExchangeBuilder.topicExchange(RabbitMqEnum.ExchangeEnum.TEST_DEAD_LETTER_EXCHANGE.name()).durable(Boolean.TRUE).build();
+	}
+
+	@Bean
+	public Binding deadLetterBinding(){
+		return BindingBuilder
+				.bind(deadLetterArgQueue())
+				.to(deadLetterExchange())
+				.with(RabbitMqEnum.RoutingKey.TEST_DEAD_LETTER_EXCHANGE_KEY.name());
+	}
+
+	@Bean
 	public Binding binding(Queue queue,DirectExchange directExchange){
 		return BindingBuilder.bind(queue).to(directExchange).with(RabbitMqEnum.RoutingKey.TEST_ROUTING_KEY);
 	}
@@ -184,7 +216,7 @@ public class RabbitMqConfig{
 
 	/**
 	 * 在启动时 RabbitAdmin会根据绑定的Queue、Exchange、binding调用RabbitTemplate,创建Queue,Exchange,Binding,Channel
-	 * @see org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer#redeclareElementsIfNecessary()
+	 * @see org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer#redeclareElementsIfNecessary
 	 * 如果设置了
 	 * @see org.springframework.boot.autoconfigure.amqp.RabbitProperties.SimpleContainer#missingQueuesFatal
 	 * 则必须要有一个自定义的AmqpAdmin 否则启动报错
@@ -198,11 +230,15 @@ public class RabbitMqConfig{
 		* */
 		RabbitAdmin admin = new RabbitAdmin(rabbitTemplate);
 		admin.declareQueue(queue());
+		admin.declareQueue(logQueue());
 		admin.declareQueue(durableQueue());
+		admin.declareQueue(deadLetterArgQueue());
+		admin.declareExchange(deadLetterExchange());
 		admin.declareExchange(directExchange());
 		admin.declareExchange(fanoutExchange());
 		admin.declareBinding(binding);
 		admin.declareBinding(bindingDurable);
+		admin.declareBinding(deadLetterBinding());
 		admin.setAutoStartup(true);
 		admin.afterPropertiesSet();
 		return admin;

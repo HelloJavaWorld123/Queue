@@ -150,6 +150,8 @@
     8.declarationRetries:创建失败时 重试的次数.依赖RabbitAdmin对象
     9.RetryDeclarationInterval:重试创建的时间间隔.依赖RabbitAdmin对象
     10.FailedDeclarationRetryInterval:创建失败时重试的时间间隔.依赖RabbitAdmin对象
+    11.DefaultRequeueRejected: 在消息被监听器拒绝时是否重新入队,默认值:true;如果设置为False,而且在当前队列设置了x-dead-letter-exchange以及x-dead-letter-routing-key
+       消息就会被投入到DLQ中
 - MessageBuilder
     - . 消息体的构建
 - RabbitAdmin
@@ -230,7 +232,33 @@
             只是在日志没有被打印出来.实现上面的接口,打印日志就会发现异常信息.
        1.2 增加*spring-boot-starter-actuator* 会使用RabbitTemplate进行链接测试
     2.死信队列(Dead Latter Queue)
+       2.1 在Declaring Queues时,通过指定x-dead-letter-exchange 参数指定DLQ的Exchange
+                ```
+                return QueueBuilder
+                        .durable(RabbitMqEnum.QueueEnum.TEST_X_DEAD_LETTER_EXCHANGE_ARG.name())
+                        .deadLetterExchange(RabbitMqEnum.ExchangeEnum.TEST_DEAD_LETTER_EXCHANGE.name())
+                        .deadLetterRoutingKey(RabbitMqEnum.RoutingKey.TEST_DEAD_LETTER_EXCHANGE_KEY.name())
+                        .build();  
+                 或者:
+                Map<String, Object> arguments = new HashMap<>(2);
+                    arguments.put("x-dead-letter-exchange",RabbitMqEnum.ExchangeEnum.TEST_DEAD_LETTER_EXCHANGE.name());
+                    arguments.put("x-dead-letter-routing-key",RabbitMqEnum.RoutingKey.TEST_DEAD_LETTER_EXCHANGE_KEY.name());
+                    return QueueBuilder
+                            .durable(RabbitMqEnum.QueueEnum.TEST_X_DEAD_LETTER_EXCHANGE_ARG.name())
+                            .withArguments(arguments)
+                            .build();
+                ```
+            备注: 1.在声明队列时,DLQ的Exchange可以不必声明,但在使用时,该Exchange 必须存在;
+                  2.如果DLQ的Exchang的rounting key没有声明,那么使用向死信队列推送的消息的Routing Key;
+          
     3.延迟队列
         3.1 方案一：在RabbitMq3.6.0中有延迟插件,在发送消息时：通过MessageProperties设置message的头部：Set the x-delay header
     4.Transactional
+      4.1 XA Transaction:
+        4.1.1 TM(Transaction Management)+RM(Resource Management)
+        4.1.1 两阶段提交协议(2PC)
+            4.1.1.1 MySql在InnoDB的数据库中支持XA协议,Mysql支持外部XA和内部XA
+                4.1.1.1.1 Mysql的外部XA是在多个Mysql实列之间协调,应用层作为协调者,工具包括:网易的DDB 淘宝的TDDL
+                4.1.1.1.2 Mysql的外部XA是在单个Mysql实列夸多引擎的事务,Binlog作为协调者;这时没有协调者
+                    4.1.1.1.1 查看Mysql是否支持XA事务:show variables like '%xa%' --> 如果 innodb_support_xa的值为on 表示支持xa事务
     5.序列化和反序列化
