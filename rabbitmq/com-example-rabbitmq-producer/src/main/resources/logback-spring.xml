@@ -28,19 +28,21 @@
         <password>root</password>
         <virtualHost>virtual_host_test</virtualHost>
 
-
         <exchangeType>direct</exchangeType>
         <exchangeName>log</exchangeName>
         <contentType>application/json</contentType>
         <autoDelete>false</autoDelete>
         <declareExchange>true</declareExchange>
+        <!--是否持久化-->
+        <deliveryMode>PERSISTENT</deliveryMode>
+        <!--默认值 30次-->
+        <maxSenderRetries>3</maxSenderRetries>
         <!-- <abbreviation>36</abbreviation --> <!-- no category abbreviation by default -->
         <applicationId>AmqpAppenderTest</applicationId>
         <routingKeyPattern>producer-log</routingKeyPattern>
         <generateId>true</generateId>
         <charset>UTF-8</charset>
         <durable>true</durable>
-        <deliveryMode>NON_PERSISTENT</deliveryMode>
     </appender>
 
     <logger name="org.springframework.amqp" level="DEBUG">

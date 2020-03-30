@@ -72,14 +72,13 @@
 - RetryTemplate
 
       1. RetryPolicy -- 重试策略
-      2. BackOffPolicy -- ???
-        2.1. SleepingBackOffPolicy --
-        2.2. StatelessBackOffPolicy --
-        2.3. ExponentialBackOffPolicy -- 
-            2.3.1. ExponentialRandomBackOffPolicy --
-        2.4. FixedBackOffPolicy -- 
-        2.5. UniformRandomBackOffPolicy --
-        2.6. NoBackOffPolicy -- 默认的
+      2. BackOffPolicy + SleepingBackOffPolicy -- 重试时间间隔策略
+        2.1. StatelessBackOffPolicy -- 基类
+        2.2. ExponentialBackOffPolicy -- 固定倍数向上递增
+            2.2.1. ExponentialRandomBackOffPolicy -- 倍数乘以一个随机小数的形式,进行递增
+        2.3. FixedBackOffPolicy -- 固定的频率进行无限重试
+        2.4. UniformRandomBackOffPolicy -- 以maxBackOffPeriod 和 minBackOffPeriod的差,作为种子计算一个随机数x,x+minBackOffPeriod 最为下一次的时间间隔
+        2.5. NoBackOffPolicy -- 默认的
 - AsyncRabbitTemplate
         
       1.1
@@ -152,19 +151,19 @@
     10.FailedDeclarationRetryInterval:创建失败时重试的时间间隔.依赖RabbitAdmin对象
     11.DefaultRequeueRejected: 在消息被监听器拒绝时是否重新入队,默认值:true;如果设置为False,而且在当前队列设置了x-dead-letter-exchange以及x-dead-letter-routing-key
        消息就会被投入到DLQ中
-- MessageBuilder
-    - . 消息体的构建
+- MessageBuilder(MessageProperties、Message)
+    - 消息体的构建,包括Content-type,是否持久化,x-delay延迟消息,消息的优先级,头部参数等属性
 - RabbitAdmin
 
       在启动时,声明所有的Queue、Exchange、Binding;或者如果存在auto_delete的Queue,Exchange,再使用时也会使用该RabbitAdmin重新创建缺失的Queue，Exchange
       如果autoDeclare设置为True,则必须提供该RabbitAdmin对象
       
       1.Exchange
-        1.1. DirectExchange -- 
-        1.2. FanoutExchange --
-        1.3. TopicExchange --
-        1.4. HeadersExchange -- 
-        1.5. CustomerExchange -- 
+        1.1. DirectExchange -- 根据Rounting Key 全匹配的形式发送消息
+        1.2. FanoutExchange -- 广播的形式发送消息,忽略Routing Key
+        1.3. TopicExchange -- 根据Routing Key 模糊匹配
+        1.4. HeadersExchange --  根据header的参数进行全匹配或者部分匹配
+        1.5. CustomerExchange -- 自定义交换机
       2.Binding:
       3.Queue:
         3.1. name -- Queue 的名称
@@ -173,7 +172,6 @@
         3.4. autoDelete -- 当队列很长时间不再使用时,Server是否自动删除. 时间是多长???
         3.5. actualName -- 如果name不为空,则使用name的值.否则使用:spring.gen-UUID_awaiting_declaration.(参考:org.springframework.amqp.core.Base64UrlNamingStrategy.generateName)
 - @RabbitListener
-    1.
 - @RabbitListeners
     1. 支持 @RabbitListener 的 @Repeatable,
 - @RabbitHandler
@@ -192,24 +190,56 @@
             true:Channel上未被处理的消息的最大数量.影响到客户端的吞吐量(Tell the broker how many messages to send to each consumer in a single request)
 - BlockingQueueConsumer:
     
-- AmqpAppender:日志发送相关配置
+- AmqpAppender:
+   
+   1.结合logback-spring.xml直接将配置的layout形式的日志发送到指定的Exchange中
+   ```
+  <appender name="AMQP" class="org.springframework.amqp.rabbit.logback.AmqpAppender">
+          <layout>
+              <pattern><![CDATA[ %d{yyyy-MM-dd HH:mm:ss} %p %t [%c] - <%m>%n ]]></pattern>
+          </layout>
+          <host>127.0.0.1</host>
+          <port>5672</port>
+          <username>all_virtual_host_admin</username>
+          <password>root</password>
+          <virtualHost>virtual_host_test</virtualHost>
+          
+          <exchangeType>direct</exchangeType>
+          <exchangeName>log</exchangeName>
+          <contentType>application/json</contentType>
+          <autoDelete>false</autoDelete>
+          <declareExchange>true</declareExchange>
+          <!--是否持久化-->
+          <deliveryMode>PERSISTENT</deliveryMode>
+          <!--默认值 30次-->
+          <maxSenderRetries>3</maxSenderRetries>
+          <!-- <abbreviation>36</abbreviation --> <!-- no category abbreviation by default -->
+          <applicationId>AmqpAppenderTest</applicationId>
+          <routingKeyPattern>producer-log</routingKeyPattern>
+          <generateId>true</generateId>
+          <charset>UTF-8</charset>
+          <durable>true</durable>
+      </appender>
+  ```
 - AbstractRoutingConnectionFactory
-   1. SimpleRoutingConnectionFactory
+   1.SimpleRoutingConnectionFactory 根据virtual_host的不同,分别配置不同ConnectionFactory
 
 
 # 消息的确认机制
-   1.  *           ConfirmCallBack
-       * Producer  ---------------> Rabbit Cluster Broker -----> Exchange ----> Queue ----> Consumer
-       *           <--------------                        <-----          <----       
-       *            ReturnCallBack 
+
+   1.             ConfirmCallBack
+        Producer  ---------------> Rabbit Cluster Broker -----> Exchange ----> Queue ----> Consumer
+                  <--------------                        <-----          <----       
+                   ReturnCallBack 
     
    2. ConfirmCallBack: 是Cluster Broker收到消息后给Producer的确认.
       2.0 一个RabbitTemplate只能有一个ConfigCallBack,或者在Config中全局配置或者在条用RabbitTemplate中单独配置
       2.1 CachingConnectionFactory中setConfirmCallBack()过时,由ConfirmType取缔
       2.2 ConfirmType:
           2.2.1: None : 默认的确认机制
-          2.2.2: Correlated:
+          2.2.2: Correlated:发送者发送消息时对Message设置唯一的标识id,当Broker确认时将Correlated重新发送给生产者
           2.2.3: Simple: 
+          
    3. ReturnCallBack:
       3.0 消息由Cluster Broker 投递到 Exchange,然后由Exchange是否成功投递到Queue时,返回的相关信息
       3.1 Mandatory: 设置为True;
@@ -261,4 +291,8 @@
                 4.1.1.1.1 Mysql的外部XA是在多个Mysql实列之间协调,应用层作为协调者,工具包括:网易的DDB 淘宝的TDDL
                 4.1.1.1.2 Mysql的外部XA是在单个Mysql实列夸多引擎的事务,Binlog作为协调者;这时没有协调者
                     4.1.1.1.1 查看Mysql是否支持XA事务:show variables like '%xa%' --> 如果 innodb_support_xa的值为on 表示支持xa事务
+      4.2 TCC(Trancsactional Confirm Cancle)
+      4.2 最终一致性方案
     5.序列化和反序列化
+    6.对已经持久化的队列进行属性的新增或者删除,再启动时会报错错误.因为已经持久化的队列不能再更新属性,必须先删除才能再更新
+    7.怎么保证消息的顺序
