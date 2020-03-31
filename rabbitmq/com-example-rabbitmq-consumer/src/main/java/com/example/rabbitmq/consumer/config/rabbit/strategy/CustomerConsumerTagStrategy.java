@@ -1,4 +1,4 @@
-package com.example.rabbitmq.consumer.config.rabbit;
+package com.example.rabbitmq.consumer.config.rabbit.strategy;
 
 import com.example.rabbit.common.utils.IPAddressUtils;
 import org.springframework.amqp.support.ConsumerTagStrategy;

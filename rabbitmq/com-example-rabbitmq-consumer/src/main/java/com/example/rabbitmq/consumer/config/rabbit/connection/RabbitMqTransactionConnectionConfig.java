@@ -1,4 +1,4 @@
-package com.example.rabbitmq.consumer.config.rabbit;
+package com.example.rabbitmq.consumer.config.rabbit.connection;
 
 import com.example.rabbitmq.consumer.config.properties.RabbitMqTransactionProperties;
 import com.example.rabbitmq.consumer.config.rabbit.listener.CustomerChannelListener;

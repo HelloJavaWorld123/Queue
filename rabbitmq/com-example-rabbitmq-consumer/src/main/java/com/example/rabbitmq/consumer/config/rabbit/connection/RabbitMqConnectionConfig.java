@@ -1,15 +1,15 @@
-package com.example.rabbitmq.consumer.config.rabbit;
+package com.example.rabbitmq.consumer.config.rabbit.connection;
 
 import com.example.rabbitmq.consumer.config.rabbit.handler.RabbitConnectionExceptionHandler;
 import com.example.rabbitmq.consumer.config.rabbit.listener.CustomerChannelListener;
 import com.example.rabbitmq.consumer.config.rabbit.listener.CustomerConnectionListener;
 import com.example.rabbitmq.consumer.config.rabbit.handler.CustomerExceptionStrategy;
+import com.example.rabbitmq.consumer.config.rabbit.strategy.CustomerConsumerTagStrategy;
 import com.example.rabbitmq.consumer.modal.Person;
 import com.rabbitmq.client.ConnectionFactory;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
-import org.springframework.amqp.rabbit.config.SimpleRabbitListenerEndpoint;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.SimplePropertyValueConnectionNameStrategy;
 import org.springframework.amqp.rabbit.listener.ConditionalRejectingErrorHandler;
@@ -92,7 +92,6 @@ public class RabbitMqConnectionConfig{
 	 * 1.自动缩容的消费者线程间隔离，
 	 */
 	@Bean
-	@ConditionalOnMissingBean(MessageListenerContainer.class)
 	public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(CachingConnectionFactory cachingConnectionFactory, RetryTemplate retryTemplate, ContentTypeDelegatingMessageConverter contentTypeDelegatingMessageConverter){
 		SimpleRabbitListenerContainerFactory simpleRabbitListenerContainerFactory = new SimpleRabbitListenerContainerFactory();
 		simpleRabbitListenerContainerFactory.setConnectionFactory(cachingConnectionFactory);
@@ -160,8 +159,8 @@ public class RabbitMqConnectionConfig{
 	}
 
 	@Bean
-	public SimpleMessageListenerContainer simpleMessageListenerContainer(SimpleRabbitListenerContainerFactory simpleRabbitListenerContainerFactory){
-		SimpleMessageListenerContainer simpleMessageListenerContainer = simpleRabbitListenerContainerFactory.createListenerContainer();
+	public SimpleMessageListenerContainer simpleMessageListenerContainer(SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory){
+		SimpleMessageListenerContainer simpleMessageListenerContainer = rabbitListenerContainerFactory.createListenerContainer();
 
 		//默认值 为True
 		simpleMessageListenerContainer.setAutoDeclare(Boolean.TRUE);
@@ -220,8 +219,7 @@ public class RabbitMqConnectionConfig{
 
 
 	@Bean(destroyMethod = "destroy")
-	@ConditionalOnMissingBean(org.springframework.amqp.rabbit.connection.ConnectionFactory.class)
-	public CachingConnectionFactory factory(ConnectionFactory connectionFactory,SimplePropertyValueConnectionNameStrategy strategy){
+	public CachingConnectionFactory cachingConnectionFactory(ConnectionFactory connectionFactory,SimplePropertyValueConnectionNameStrategy strategy){
 		CachingConnectionFactory cachingConnectionFactory = new CachingConnectionFactory(connectionFactory);
 		//自定义当前连接节点的名称标识
 		cachingConnectionFactory.setConnectionNameStrategy(strategy);
@@ -248,7 +246,6 @@ public class RabbitMqConnectionConfig{
 
 
 	@Bean
-	@ConditionalOnMissingBean(com.rabbitmq.client.ConnectionFactory.class)
 	public ConnectionFactory connectionFactory(){
 		ConnectionFactory connectionFactory = new ConnectionFactory();
 		PropertyMapper propertyMapper = PropertyMapper.get();
