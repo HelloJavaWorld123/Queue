@@ -1,4 +1,4 @@
-package com.example.rabbitmq.consumer.config.rabbit;
+package com.example.rabbitmq.consumer.config.rabbit.handler;
 
 import com.rabbitmq.client.*;
 import org.slf4j.Logger;

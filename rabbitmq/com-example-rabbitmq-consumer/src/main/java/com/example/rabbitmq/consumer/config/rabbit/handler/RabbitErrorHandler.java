@@ -1,8 +1,7 @@
-package com.example.rabbitmq.consumer.config.rabbit.errorhandler;
+package com.example.rabbitmq.consumer.config.rabbit.handler;
 
 import com.example.rabbit.common.utils.LoggerUtils;
 import org.springframework.amqp.rabbit.listener.ConditionalRejectingErrorHandler;
-import org.springframework.stereotype.Component;
 import org.springframework.util.ErrorHandler;
 
 /**

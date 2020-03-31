@@ -92,7 +92,7 @@
       5. stopConsumerMinInterval: 停止其他的消费者最小的时间间隔
       6. consecutiveActiveTrigger:
       7. consecutiveIdleTrigger:
-      8. batch Size: 批量处理的数量。会以当前数量循环获取消息数量，进行批处理
+      8. batchSize: 批量处理的消息数量。会以当前数量循环获取消息数量，进行批处理
       9. consumerBatchEnabled: 批量消费消息
       10.DebatchingEnable:是否支持批量处理的消息分批处理(与Batch Size 和 ConsumerBatchEnable 一起使用)
       11.batchingStrategy:消息分批处理的策略 
@@ -137,6 +137,10 @@
       
       
 - AbstractMessageListenerContainer
+    
+    SimpleMessageListenerContainer
+    
+    DirectMessageListenerContainer
 
 
     1.alwaysRequeueWithTxManagerRollback: 事务回滚时,消息是否重新入队
@@ -151,6 +155,7 @@
     10.FailedDeclarationRetryInterval:创建失败时重试的时间间隔.依赖RabbitAdmin对象
     11.DefaultRequeueRejected: 在消息被监听器拒绝时是否重新入队,默认值:true;如果设置为False,而且在当前队列设置了x-dead-letter-exchange以及x-dead-letter-routing-key
        消息就会被投入到DLQ中
+    12.prefetchCount:consumer在一个拉取消息的请求中，Broker发送多少条消息给Consumer;影响消费者的吞吐量
 - MessageBuilder(MessageProperties、Message)
     - 消息体的构建,包括Content-type,是否持久化,x-delay延迟消息,消息的优先级,头部参数等属性
 - RabbitAdmin
@@ -184,12 +189,17 @@
 - @SendTo
     1. 消息处理后的回复信息.(比如:标注在类上，统一回复)
     2. 支持SpEl表达式(eg: @SendTo("!{'some.reply.queue.with.' + result.queueName}"))
-- Channel: [Prefetch Count](https://www.rabbitmq.com/blog/2012/05/11/some-queuing-theory-throughput-latency-and-bandwidth/): 
-            客户端从Queue中获取消息的预期值。Spring Boot的默认值为250
-            设置Channel或者Queue上堆积消息的数量.false:指定的Queue上未被处理的消息最大数量.
-            true:Channel上未被处理的消息的最大数量.影响到客户端的吞吐量(Tell the broker how many messages to send to each consumer in a single request)
+- Channel:
 - BlockingQueueConsumer:
-    
+    1. 是否动态增加Consumer的条件(org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer.AsyncMessageProcessingConsumer.mainLoop 自循环执行)
+        1.1 如果receivedOk为True
+            1.1 consecutiveMessages++ 大于 consecutiveActiveTrigger(默认值 10)
+            1.2 lastConsumerStarted + StartConsumerMinInterval < now()
+            以上条件满足 调用 TaskExecutor 增加 一个Consumer 执行任务
+        1.2 如果receivedOk为False (减少consumer)
+            1.1 consecutiveIdles++ 大于 consecutiveIdleTrigger
+            1.2 lastConsumerStopped + StopConsumerMinInterval < now
+            以上条件满足 将当前的consumer 从 consumers 移除 并更新 lastConsumerStopped为当前时间
 - AmqpAppender:
    
    1.结合logback-spring.xml直接将配置的layout形式的日志发送到指定的Exchange中
@@ -296,3 +306,5 @@
     5.序列化和反序列化
     6.对已经持久化的队列进行属性的新增或者删除,再启动时会报错错误.因为已经持久化的队列不能再更新属性,必须先删除才能再更新
     7.怎么保证消息的顺序
+    8.如果在mq服务器异步通知过程中，由于网络原因或者mq正好准备回调就挂了，导致发布者没有收到确认发送的消息怎么办？
+    9.mq 迟迟未收到consumer的ack怎么处理？

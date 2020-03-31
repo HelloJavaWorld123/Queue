@@ -1,6 +1,9 @@
 package com.example.rabbitmq.consumer.config.rabbit;
 
-import com.example.rabbitmq.consumer.config.rabbit.errorhandler.CustomerExceptionStrategy;
+import com.example.rabbitmq.consumer.config.rabbit.handler.RabbitConnectionExceptionHandler;
+import com.example.rabbitmq.consumer.config.rabbit.listener.CustomerChannelListener;
+import com.example.rabbitmq.consumer.config.rabbit.listener.CustomerConnectionListener;
+import com.example.rabbitmq.consumer.config.rabbit.handler.CustomerExceptionStrategy;
 import com.example.rabbitmq.consumer.modal.Person;
 import com.rabbitmq.client.ConnectionFactory;
 import org.springframework.amqp.core.AcknowledgeMode;
@@ -42,7 +45,7 @@ import java.util.Map;
 @EnableRabbit
 @Configuration
 @EnableConfigurationProperties(value = {RabbitProperties.class})
-public class RabbitMqConfig{
+public class RabbitMqConnectionConfig{
 
 	private final Environment environment;
 
@@ -62,7 +65,7 @@ public class RabbitMqConfig{
 
 	private final RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler;
 
-	public RabbitMqConfig(Environment environment, RabbitProperties rabbitProperties, CustomerExceptionStrategy customerExceptionStrategy, ThreadPoolTaskExecutor threadPoolTaskExecutor, SimpleAsyncTaskExecutor simpleAsyncTaskExecutor, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, CustomerConsumerTagStrategy customerConsumerTagStrategy, RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler){
+	public RabbitMqConnectionConfig(Environment environment, RabbitProperties rabbitProperties, CustomerExceptionStrategy customerExceptionStrategy, ThreadPoolTaskExecutor threadPoolTaskExecutor, SimpleAsyncTaskExecutor simpleAsyncTaskExecutor, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, CustomerConsumerTagStrategy customerConsumerTagStrategy, RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler){
 		this.environment = environment;
 		this.rabbitProperties = rabbitProperties;
 		this.customerExceptionStrategy = customerExceptionStrategy;
@@ -156,20 +159,15 @@ public class RabbitMqConfig{
 		return simpleRabbitListenerContainerFactory;
 	}
 
-//	@Bean
+	@Bean
 	public SimpleMessageListenerContainer simpleMessageListenerContainer(SimpleRabbitListenerContainerFactory simpleRabbitListenerContainerFactory){
-		//如果更SimpleRabbitListenerContainerFactory设置的属性重叠 以Endpoint为准
-		SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
-
-//		Message.addWhiteListPatterns("");
-		SimpleMessageListenerContainer simpleMessageListenerContainer = simpleRabbitListenerContainerFactory.createListenerContainer(endpoint);
+		SimpleMessageListenerContainer simpleMessageListenerContainer = simpleRabbitListenerContainerFactory.createListenerContainer();
 
 		//默认值 为True
 		simpleMessageListenerContainer.setAutoDeclare(Boolean.TRUE);
 		simpleMessageListenerContainer.setDeclarationRetries(3);
 		simpleMessageListenerContainer.setRetryDeclarationInterval(60000);
 		simpleMessageListenerContainer.setFailedDeclarationRetryInterval(5000);
-
 
 		//version 1.7.x之前默认值是true  version2.0 之后默认值是False.表示事务的消息在事务回滚时是否重新入队
 		simpleMessageListenerContainer.setAlwaysRequeueWithTxManagerRollback(Boolean.TRUE);
@@ -180,8 +178,8 @@ public class RabbitMqConfig{
 		simpleMessageListenerContainer.setForceCloseChannel(Boolean.FALSE);
 		//授权失败是否是致命的。如果是则在启动时,容器上下文不能被初始化.如果不是则会进入重试模式
 		simpleMessageListenerContainer.setPossibleAuthenticationFailureFatal(Boolean.TRUE);
-		//默认值为True
-//		simpleMessageListenerContainer.setDefaultRequeueRejected(Boolean.FALSE);
+		//默认值为True 使消息进入DLQ
+		simpleMessageListenerContainer.setDefaultRequeueRejected(Boolean.FALSE);
 		return simpleMessageListenerContainer;
 	}
 
@@ -221,9 +219,6 @@ public class RabbitMqConfig{
 	}
 
 
-	/**
-	 * TODO 集群
-	 */
 	@Bean(destroyMethod = "destroy")
 	@ConditionalOnMissingBean(org.springframework.amqp.rabbit.connection.ConnectionFactory.class)
 	public CachingConnectionFactory factory(ConnectionFactory connectionFactory,SimplePropertyValueConnectionNameStrategy strategy){

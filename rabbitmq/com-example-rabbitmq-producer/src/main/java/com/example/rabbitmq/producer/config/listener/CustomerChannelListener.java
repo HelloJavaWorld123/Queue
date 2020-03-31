@@ -1,5 +1,6 @@
-package com.example.rabbitmq.producer.config;
+package com.example.rabbitmq.producer.config.listener;
 
+import com.example.rabbitmq.producer.config.AbstractConfig;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;
 import org.slf4j.Logger;
