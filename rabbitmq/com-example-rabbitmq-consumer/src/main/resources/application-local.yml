@@ -30,10 +30,32 @@ spring:
         #递增的倍数
         multiplier: 2
       mandatory: true
-    listener:
-      direct:
-        auto-startup: true
-      simple:
-        batch-size: 10
-        # 在Broker中的队列出现不能时，是否停止容器
-        missing-queues-fatal: true
+  transaction:
+    rabbitmq:
+      host: 127.0.0.1
+      port: 5672
+      userName: transactional
+      password: 123456
+      virtualHost: transaction_virtual_host
+      requestedHeartbeat: 10
+      publisherReturns: true
+      publisherConfirmType: simple
+      connectionTimeout: 100
+      prefetchCount: 1
+      channelTransacted: true
+      concurrentConsumer: 1
+      maxConcurrentConsumer: 10
+      cache:
+        connection:
+          mode: channel
+        channel:
+          size: 10
+          checkout-timeout: 10000
+      retry:
+        enabled: true
+        max-attempts: 3
+        initial-interval: 1000
+        max-interval: 10000
+        #递增的倍数
+        multiplier: 2
+      mandatory: true
