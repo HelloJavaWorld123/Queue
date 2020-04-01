@@ -1,6 +1,6 @@
 package com.example.rabbitmq.consumer.config.rabbit.connection;
 
-import com.example.rabbitmq.consumer.config.properties.RabbitMqTransactionProperties;
+import com.example.rabbitmq.consumer.config.properties.RabbitMqTranProperties;
 import com.example.rabbitmq.consumer.config.rabbit.listener.CustomerChannelListener;
 import com.example.rabbitmq.consumer.config.rabbit.listener.CustomerConnectionListener;
 import com.rabbitmq.client.ConnectionFactory;
@@ -20,8 +20,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
  * Desc: 事务链接工厂
  */
 @Configuration
-@EnableConfigurationProperties(value = {RabbitMqTransactionProperties.class})
-public class RabbitMqTransactionConnectionConfig{
+@EnableConfigurationProperties(value = {RabbitMqTranProperties.class})
+public class RabbitMqTransactionConnListenerConfig{
 
 	private final CustomerChannelListener channelListener;
 
@@ -29,10 +29,10 @@ public class RabbitMqTransactionConnectionConfig{
 
 	private final ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
-	private final RabbitMqTransactionProperties transactionProperties;
+	private final RabbitMqTranProperties transactionProperties;
 
 
-	public RabbitMqTransactionConnectionConfig(CustomerChannelListener channelListener, CustomerConnectionListener connectionListener, ThreadPoolTaskExecutor threadPoolTaskExecutor, RabbitMqTransactionProperties transactionProperties){
+	public RabbitMqTransactionConnListenerConfig(CustomerChannelListener channelListener, CustomerConnectionListener connectionListener, ThreadPoolTaskExecutor threadPoolTaskExecutor, RabbitMqTranProperties transactionProperties){
 		this.channelListener = channelListener;
 		this.connectionListener = connectionListener;
 		this.threadPoolTaskExecutor = threadPoolTaskExecutor;
@@ -95,7 +95,7 @@ public class RabbitMqTransactionConnectionConfig{
 		cachingConnectionFactory.setConnectionTimeout(transactionProperties.getConnectionTimeout());
 
 		cachingConnectionFactory.setPublisherReturns(transactionProperties.getPublisherReturns());
-		cachingConnectionFactory.setPublisherConfirmType(transactionProperties.getConfirmType());
+		cachingConnectionFactory.setPublisherConfirmType(transactionProperties.getPublisherConfirmType());
 
 		cachingConnectionFactory.setRequestedHeartBeat(transactionProperties.getRequestedHeartbeat());
 

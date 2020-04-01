@@ -7,12 +7,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @author : RXK
- * Date : 2020/3/31 18:02
- * Desc: RabbitMq事务 链接的配置
+ * Date : 2020/4/1 10:11
+ * Desc:
  */
 @Data
-@ConfigurationProperties(prefix = "spring.transaction.rabbitmq")
-public class RabbitMqTransactionProperties{
+@ConfigurationProperties(prefix = "spring.log.rabbitmq")
+public class RabbitMqLogProperties{
 
 	private String host;
 
@@ -42,8 +42,15 @@ public class RabbitMqTransactionProperties{
 
 	private CachingConnectionFactory.ConfirmType confirmType;
 
-	private RabbitProperties.Retry retry;
-
 	private RabbitProperties.Cache cache;
 
+	private Integer batchSize;
+
+	private Integer consecutiveActiveTrigger;
+
+	private Integer consecutiveIdleTrigger;
+
+	private Long startConsumerMinInterval;
+
+	private Long stopConsumerMinInterval;
 }

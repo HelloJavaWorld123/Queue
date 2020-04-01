@@ -23,7 +23,7 @@ public class LogMessageListener extends AbstractRabbitMqMessage{
 	@Override
 	@RabbitListener(queuesToDeclare = @Queue(name = "TEST_LOG_QUEUE",
 	                                         durable = "true",
-	                                         autoDelete = "false"))
+	                                         autoDelete = "false"),containerFactory = "logRabbitListenerContainerFactory")
 	void receiveMessage(Message message, Channel channel){
 		LoggerUtils.info(message.toString());
 		try{
@@ -32,10 +32,10 @@ public class LogMessageListener extends AbstractRabbitMqMessage{
 				throw new IllegalArgumentException("进入DeadLetterExchange");
 			}
 			count.getAndAdd(1);
+			LoggerUtils.info("deliveryTag:{"+message.getMessageProperties().getDeliveryTag()+"}");
 			channel.basicAck(message.getMessageProperties().getDeliveryTag(), true);
 		} catch(Exception e){
 			try{
-				LoggerUtils.error("处理消息时出现异常:",e);
 				channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
 			} catch(IOException ex){
 				ex.printStackTrace();

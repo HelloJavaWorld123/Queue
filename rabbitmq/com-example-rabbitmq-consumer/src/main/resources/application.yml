@@ -5,10 +5,10 @@ logging:
     org:
       springframework:
         retry: debug
-        amqp: debug
+        amqp: info
         transaction: debug
     com:
-      rabbitmq: debug
+      rabbitmq: info
 spring:
   profiles:
     active: local

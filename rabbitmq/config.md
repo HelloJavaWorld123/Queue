@@ -264,7 +264,23 @@
         会将生产者的数据分别发送到主队列和镜像队列中，确认机制是什么？？？？
     6.高可用的队列在重新选举主节点时，会从‘最老’的节点中选举，
       对于刚加入的节点不会被选择主节点，依赖因为后加入的从节点不会同步历史数据，如果刚加入进来就被选举为主节点那么数据将会丢失
-    7.
+    7. HA mode (集群模式)(ha-mode=)
+        7.1 all : 所有的节点
+        7.2 exactly: 指定节点的数量
+            ha-params=: 设置数量个数
+        7.3 nodes: 按照节点的名称
+            ha-params=:节点的名称,多个节点用逗号隔开
+    8.当集群中重新加入节点是,数据同步的方式:(新加入的节点只会同步最新的message,旧消息需要设置同步方式)
+        ha-sync-mode=:
+        8.1 manual ：手动同步
+        8.2 automatic : 自动同步
+    9.ha-promote-on-failure
+        9.1 when-sync
+        9.2 always
+    10.ha-promote-on-shutdown
+        10.1 when-sync
+        10.2 always
+    11.集群中两个节点之间心跳的间隔时间是60s,当两个节点互相接收不到心跳时,就会出现网络分区,在默认的网络分区处理策略配置下会导致脑裂（split-Brain）问题出现
 # QA
 
     1.启动时不会检查配置的有效性？
@@ -308,3 +324,27 @@
     7.怎么保证消息的顺序
     8.如果在mq服务器异步通知过程中，由于网络原因或者mq正好准备回调就挂了，导致发布者没有收到确认发送的消息怎么办？
     9.mq 迟迟未收到consumer的ack怎么处理？
+    10.集群中节点之间数据同步的模式：
+        10.1.Async
+    11.RabbitMQ集群的分区模式有哪几种？各自的特点是什么？(脑裂问题)
+        脑裂问题：在一个HA的集群中，当其中一个节点与集群断开链接时,或者心跳链接的两个节点由于网络或者中间设备断开了心跳传输,而相互又任务对方节点出现了问题。
+        此时，一个完整的HA系统，分成了多个单独的节点，对于无状态链接的HA集群,单独的节点继续服务不会出现数据不一致问题，但对于有状态的HA集群，节点会出现资源抢夺以及
+        各节点数据不一致的问题,MySQL的HA集群就是有状态的集群；
+        RabbitMQ在产生脑裂问题时使用的是 --- 分区
+        分区有一下三种模式:（cluster_partition_handling=）
+       10.1 ignore:默认方式,当其中两个节点心跳无法互连时,RabbitMQ会出现分区,而这种模式下没有自动选择信任分区，导致数据还将正常发送到所有的节点,会导致数据不一致以及资源的争夺,以及丢数据问题
+       10.2 pause_minority:(暂停少数节点模式,节点个数大于2,否则心跳断链后 两个都不对外服务)
+            选择了CAP中分区容错性P,放弃了可用性A
+            RabbitMQ在这种模式下选择节点个数大于1/2节点的分区为优胜分区，优胜分区为对外提供服务节点。失败分区的web端口15672,amqp协议端口5672，25672通信端口将会被关闭.
+            erlang 6439端口保持开放，当心跳恢复时继续将失败分区的节点加入到集群中；
+       10.3 pause_if_all_down:(需要配置其他的参数:恢复模式以及节点)
+            cluster_partition_handling = pause_if_all_down
+            
+            ## Recovery strategy. Can be either 'autoheal' or 'ignore'
+            cluster_partition_handling.pause_if_all_down.recover = ignore
+            
+            ## Node names to check
+            cluster_partition_handling.pause_if_all_down.nodes.1 = rabbit@myhost1
+            cluster_partition_handling.pause_if_all_down.nodes.2 = rabbit@myhost2
+       10.4 autoheal(自动治愈):
+            根据 链接数量的多少  node节点的数量 随机 依次决定 自动决定一个可用的分区

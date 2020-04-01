@@ -5,7 +5,7 @@ spring:
     username: all_virtual_host_admin
     password: root
     virtual-host: virtual_host_test
-    requested-heartbeat: 10
+    requested-heartbeat: 30
     publisher-returns: true
     publisher-confirm-type: simple
     #设置多大是合理的？？？
@@ -37,9 +37,9 @@ spring:
       userName: transactional
       password: 123456
       virtualHost: transaction_virtual_host
-      requestedHeartbeat: 10
+      requestedHeartbeat: 30
       publisherReturns: true
-      publisherConfirmType: simple
+      publisherConfirmType: correlated
       connectionTimeout: 100
       prefetchCount: 1
       channelTransacted: true
@@ -59,3 +59,33 @@ spring:
         #递增的倍数
         multiplier: 2
       mandatory: true
+  log:
+    application:
+      name: consumer_rabbit_log_application
+    rabbitmq:
+      host: 172.16.20.55
+      port: 5672
+      userName: log_info
+      password: 123456
+      virtualHost: log_virtual_host
+      requestedHeartbeat: 30
+      publisherReturns: true
+      confirmType: none
+      connectionTimeout: 60000
+      concurrentComsumer: 1
+      maxConcurrentConsumer: 20
+      prefetchCount: 500
+      batchSize: 500
+#      默认值是10
+      consecutiveActiveTrigger: 10
+      consecutiveIdleTrigger: 60000
+      startConsumerMinInterval: 5000
+      stopConsumerMinInterval: 30000
+      cache:
+        connection:
+          model: channel
+        channel:
+          size: 20
+          checkout-timeout: 60000
+      mandatory: false
+

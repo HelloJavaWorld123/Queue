@@ -45,7 +45,7 @@ import java.util.Map;
 @EnableRabbit
 @Configuration
 @EnableConfigurationProperties(value = {RabbitProperties.class})
-public class RabbitMqConnectionConfig{
+public class RabbitMqConnListenerConfig{
 
 	private final Environment environment;
 
@@ -65,7 +65,7 @@ public class RabbitMqConnectionConfig{
 
 	private final RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler;
 
-	public RabbitMqConnectionConfig(Environment environment, RabbitProperties rabbitProperties, CustomerExceptionStrategy customerExceptionStrategy, ThreadPoolTaskExecutor threadPoolTaskExecutor, SimpleAsyncTaskExecutor simpleAsyncTaskExecutor, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, CustomerConsumerTagStrategy customerConsumerTagStrategy, RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler){
+	public RabbitMqConnListenerConfig(Environment environment, RabbitProperties rabbitProperties, CustomerExceptionStrategy customerExceptionStrategy, ThreadPoolTaskExecutor threadPoolTaskExecutor, SimpleAsyncTaskExecutor simpleAsyncTaskExecutor, CustomerChannelListener customerChannelListener, CustomerConnectionListener customerConnectionListener, CustomerConsumerTagStrategy customerConsumerTagStrategy, RabbitConnectionExceptionHandler rabbitConnectionExceptionHandler){
 		this.environment = environment;
 		this.rabbitProperties = rabbitProperties;
 		this.customerExceptionStrategy = customerExceptionStrategy;
