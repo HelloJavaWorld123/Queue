@@ -49,4 +49,10 @@ public interface RabbitMqSendMessageService{
 	String sendMessageByOneChannelAndCallBack(String exchange, String routingKey, String message, CorrelationData correlationData);
 
 
+	/**
+	 * 发送事务消息
+	 * @param correlationData ： 确认消息的关联数据
+	 * @param messageBody ：消息体
+	 */
+	void sendTransactionMessage(CorrelationData correlationData, String messageBody);
 }

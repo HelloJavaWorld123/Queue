@@ -202,7 +202,7 @@ public class RabbitMqConnListenerConfig{
 	@Bean
 	public Jackson2JsonMessageConverter jackson2JsonMessageConverter(DefaultClassMapper classMapper){
 		Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
-		converter.setClassMapper(classMapper);
+//		converter.setClassMapper(classMapper);
 		return converter;
 	}
 

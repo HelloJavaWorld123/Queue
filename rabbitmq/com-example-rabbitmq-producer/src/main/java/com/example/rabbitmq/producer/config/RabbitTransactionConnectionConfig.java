@@ -10,6 +10,7 @@ import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.SimplePropertyValueConnectionNameStrategy;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -59,8 +60,8 @@ public class RabbitTransactionConnectionConfig{
 	}
 
 	@Bean(destroyMethod = "destroy",initMethod = "start",name = "transactionalRabbitTemplate")
-	public RabbitTemplate transactionalRabbitTemplate(CachingConnectionFactory cachingConnectionFactory,Jackson2JsonMessageConverter jsonMessageConverter){
-		RabbitTemplate rabbitTemplate = new RabbitTemplate(cachingConnectionFactory);
+	public RabbitTemplate transactionalRabbitTemplate(CachingConnectionFactory transactionCachingConnectionFactory,Jackson2JsonMessageConverter jsonMessageConverter){
+		RabbitTemplate rabbitTemplate = new RabbitTemplate(transactionCachingConnectionFactory);
 		rabbitTemplate.setEncoding(Charset.defaultCharset().name());
 		rabbitTemplate.setMandatory(configProperties.getMandatory());
 		rabbitTemplate.setChannelTransacted(Boolean.TRUE);
@@ -98,6 +99,7 @@ public class RabbitTransactionConnectionConfig{
 		PropertyMapper mapper = PropertyMapper.get();
 		//设置Broker 以及 consumer的确认模式
 		mapper.from(configProperties::getPublisherReturns).whenNonNull().to(cachingConnectionFactory::setPublisherReturns);
+		//该模式 与 事务 是互斥 不能共存 这种模式时异步的，在等待RabbitMQ返回确认时 会发送其他的消息 而事务模式中发送消息后 会阻塞等待Rabbitmq返回确认消息
 		mapper.from(configProperties::getPublisherConfirmType).whenNonNull().to(cachingConnectionFactory::setPublisherConfirmType);
 
 		//设置缓存模式
@@ -154,5 +156,9 @@ public class RabbitTransactionConnectionConfig{
 		return strategy;
 	}
 
+	@Bean
+	public RabbitTransactionManager rabbitTransactionManager(CachingConnectionFactory transactionCachingConnectionFactory){
+		return new RabbitTransactionManager(transactionCachingConnectionFactory);
+	}
 
 }

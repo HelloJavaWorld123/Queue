@@ -1,15 +1,17 @@
 package com.example.rabbitmq.producer.service.impl;
 
+import com.example.rabbit.common.enums.RabbitMqEnum;
 import com.example.rabbitmq.producer.service.DefaultConfirmCallBackService;
+import com.example.rabbitmq.producer.service.DefaultReturnCallBackService;
 import com.example.rabbitmq.producer.service.RabbitMqSendMessageService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageDeliveryMode;
-import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.util.Objects;
@@ -25,10 +27,16 @@ public class RabbitMqSendMessageServiceImpl implements RabbitMqSendMessageServic
 
 	private final RabbitTemplate rabbitTemplate;
 
+	private final RabbitTemplate transactionalRabbitTemplate;
+
+	private final DefaultReturnCallBackService defaultReturnCallBackService;
+
 	private final DefaultConfirmCallBackService defaultConfirmCallBackService;
 
-	public RabbitMqSendMessageServiceImpl(RabbitTemplate rabbitTemplate, DefaultConfirmCallBackService defaultConfirmCallBackService){
+	public RabbitMqSendMessageServiceImpl(RabbitTemplate rabbitTemplate, RabbitTemplate transactionalRabbitTemplate, DefaultReturnCallBackService defaultReturnCallBackService, DefaultConfirmCallBackService defaultConfirmCallBackService){
 		this.rabbitTemplate = rabbitTemplate;
+		this.transactionalRabbitTemplate = transactionalRabbitTemplate;
+		this.defaultReturnCallBackService = defaultReturnCallBackService;
 		this.defaultConfirmCallBackService = defaultConfirmCallBackService;
 	}
 
@@ -83,6 +91,24 @@ public class RabbitMqSendMessageServiceImpl implements RabbitMqSendMessageServic
 		},(tag,multi)->callBackConfirm.append("ack-callback:").append(tag).append(multi)
 				,(tag,multi)->callBackConfirm.append("nack-callback:").append(tag).append(multi));
 		return callBackConfirm.toString();
+	}
+
+	@Override
+	@Transactional(rollbackFor = Exception.class,transactionManager = "rabbitTransactionManager")
+	public void sendTransactionMessage(CorrelationData correlationData, String messageBody){
+		Message message = MessageBuilder.withBody(messageBody.getBytes()).setDeliveryMode(MessageDeliveryMode.PERSISTENT).build();
+		transactionalRabbitTemplate.setConfirmCallback(defaultConfirmCallBackService);
+		transactionalRabbitTemplate.setReturnCallback(defaultReturnCallBackService);
+		transactionalRabbitTemplate.convertAndSend(RabbitMqEnum.ExchangeEnum.TEST_TRANSACTION_DIRECT_EXCHANGE.name(),RabbitMqEnum.RoutingKey.TEST_TRANSACTION_KEY.name(),message,correlationData);
+
+		int a = 1 / 0;
+		//第二个事务发生异常
+		transactionalRabbitTemplate.convertAndSend(
+				RabbitMqEnum.ExchangeEnum.TEST_DEAD_LETTER_EXCHANGE.name(),
+				RabbitMqEnum.RoutingKey.TEST_DEAD_LETTER_EXCHANGE_KEY.name(),
+				message,
+				correlationData
+		);
 	}
 
 }

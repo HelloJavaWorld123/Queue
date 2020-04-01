@@ -16,7 +16,7 @@ public class DefaultReturnCallBackService implements RabbitTemplate.ReturnCallba
 
 	@Override
 	public void returnedMessage(Message message, int replyCode, String replyText, String exchange, String routingKey){
-		LoggerUtils.info(String.format("----消息体是:{%s},回复编码是:{%s},回复的内容是:{%s},交换机是:{%s},路由key是:{%s}-------", message.toString(), replyCode, replyText, exchange, routingKey));
+		LoggerUtils.info(String.format("ReturnCallBack消息体是:{%s},回复编码是:{%s},回复的内容是:{%s},交换机是:{%s},路由key是:{%s}", message.toString(), replyCode, replyText, exchange, routingKey));
 		processHandleReturnCallBack(message,replyCode,replyText,exchange,routingKey);
 	}
 	protected void processHandleReturnCallBack(Message message, int replyCode, String replyText, String exchange, String routingKey){ }

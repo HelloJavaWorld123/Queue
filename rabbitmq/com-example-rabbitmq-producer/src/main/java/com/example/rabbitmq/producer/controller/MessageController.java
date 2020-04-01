@@ -50,9 +50,12 @@ public class MessageController{
 		return ResponseEntity.ok().body(callBackResult.toString());
 	}
 
-	@RequestMapping("/send/oneChannel")
+	@RequestMapping("/send/transactional")
 	public ResponseEntity<String> sendAndUseSameChannel(){
-		return ResponseEntity.ok().body("");
+		CorrelationData correlationData = new CorrelationData();
+		correlationData.setId("10000");
+		sendMessageService.sendTransactionMessage(correlationData,"This Is A Fall Transaction's Message");
+		return ResponseEntity.ok().body("ok");
 	}
 
 

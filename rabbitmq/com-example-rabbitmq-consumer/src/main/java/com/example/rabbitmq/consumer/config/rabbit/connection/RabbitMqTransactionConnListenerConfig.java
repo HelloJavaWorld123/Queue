@@ -57,8 +57,10 @@ public class RabbitMqTransactionConnListenerConfig{
 		mapper.from(transactionProperties::getChannelTransacted).to(containerFactory::setChannelTransacted);
 
 		containerFactory.setDefaultRequeueRejected(Boolean.TRUE);
-		containerFactory.setMissingQueuesFatal(Boolean.TRUE);
-		containerFactory.setMismatchedQueuesFatal(Boolean.TRUE);
+		//nested exception is org.springframework.amqp.UncategorizedAmqpException: java.lang.IllegalStateException: When 'mismatchedQueuesFatal' is 'true', there must be exactly one AmqpAdmin in the context or you must inject one into this container; found: 0
+//		containerFactory.setMissingQueuesFatal(Boolean.TRUE);
+//		containerFactory.setMismatchedQueuesFatal(Boolean.TRUE);
+
 		containerFactory.setBatchSize(1);
 		containerFactory.setConsumerBatchEnabled(Boolean.FALSE);
 		containerFactory.setDeBatchingEnabled(Boolean.FALSE);
@@ -67,7 +69,7 @@ public class RabbitMqTransactionConnListenerConfig{
 		//当消息被拒绝时 是否重新入队
 		containerFactory.setDefaultRequeueRejected(Boolean.TRUE);
 
-		containerFactory.setMessageConverter(jackson2JsonMessageConverter);
+//		containerFactory.setMessageConverter(jackson2JsonMessageConverter);
 		containerFactory.setTaskExecutor(threadPoolTaskExecutor);
 
 		containerFactory.setChannelTransacted(Boolean.TRUE);

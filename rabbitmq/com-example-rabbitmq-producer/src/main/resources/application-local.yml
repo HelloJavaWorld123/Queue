@@ -46,7 +46,7 @@ spring:
       virtualHost: transaction_virtual_host
       requestedHeartbeat: 30
       publisherReturns: true
-      publisherConfirmType: correlated
+      publisherConfirmType: none
       acknowledgeMode: manual
       retry:
         enabled: true
