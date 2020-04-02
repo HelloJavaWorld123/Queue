@@ -57,4 +57,7 @@ public interface RabbitMqSendMessageService{
 	void sendTransactionMessage(CorrelationData correlationData, String messageBody);
 
 	void sendWaitConfirmCallBack(String message,CorrelationData correlationData);
+
+	void sendDelayMessage(String message,CorrelationData correlationData);
+
 }

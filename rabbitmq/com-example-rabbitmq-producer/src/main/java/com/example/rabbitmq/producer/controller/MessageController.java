@@ -1,6 +1,7 @@
 package com.example.rabbitmq.producer.controller;
 
 import com.example.rabbit.common.enums.RabbitMqEnum;
+import com.example.rabbit.common.utils.LoggerUtils;
 import com.example.rabbitmq.producer.service.RabbitMqSendMessageService;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,9 +46,18 @@ public class MessageController{
 		correlationData.setId("call-back-message-2");
 		sendMessageService.sendMessage(RabbitMqEnum.ExchangeEnum.TEST_DIRECT_EXCHANGE.name(),RabbitMqEnum.RoutingKey.TEST_ROUTING_KEY.name(),"22222",correlationData);
 		//回调确认机制
-		StringBuilder callBackResult = new StringBuilder();
-		correlationData.getFuture().addCallback(result -> callBackResult.append(result.toString()), ex -> callBackResult.append(ex.getLocalizedMessage()));
-		return ResponseEntity.ok().body(callBackResult.toString());
+		correlationData.getFuture().addCallback(new SuccessCallback<CorrelationData.Confirm>(){
+			@Override
+			public void onSuccess(CorrelationData.Confirm result){
+				LoggerUtils.info("接收到消费方的确认回应:{"+result.toString()+"}");
+			}
+		}, new FailureCallback(){
+			@Override
+			public void onFailure(Throwable ex){
+				LoggerUtils.error("接收到异常的回调：",ex);
+			}
+		});
+		return ResponseEntity.ok().body("ok");
 	}
 
 	@RequestMapping("/send/transactional")
@@ -65,6 +75,14 @@ public class MessageController{
 		correlationData.setId("200000");
 		sendMessageService.sendWaitConfirmCallBack("111111",correlationData);
 		return ResponseEntity.ok().body("OK");
+	}
+
+	@RequestMapping("/send/delayMessage")
+	public ResponseEntity<String> sendDelayMessage(){
+		CorrelationData data = new CorrelationData();
+		data.setId("300000");
+		sendMessageService.sendDelayMessage("2222222222222",data);
+		return ResponseEntity.ok().body("ok");
 	}
 
 

@@ -41,6 +41,16 @@ public class RabbitMqMessageConfig{
 				.build();
 	}
 
+	@Bean
+	public TopicExchange deadLetterExchange(){
+		return ExchangeBuilder.topicExchange(RabbitMqEnum.ExchangeEnum.TEST_DEAD_LETTER_EXCHANGE.name()).durable(Boolean.TRUE).build();
+	}
+
+	@Bean
+	public DirectExchange delayExchange(){
+		return ExchangeBuilder.directExchange(RabbitMqEnum.ExchangeEnum.TEST_DELAY_EXCHANGE.name()).durable(Boolean.TRUE).delayed().build();
+	}
+
 
 	@Bean
 	public Queue queue(){
@@ -63,10 +73,19 @@ public class RabbitMqMessageConfig{
 				.build();
 	}
 
+	/**
+	 * QueueBuilder
+	 */
 	@Bean
-	public TopicExchange deadLetterExchange(){
-		return ExchangeBuilder.topicExchange(RabbitMqEnum.ExchangeEnum.TEST_DEAD_LETTER_EXCHANGE.name()).durable(Boolean.TRUE).build();
+	public Queue durableQueue(){
+		return QueueBuilder.durable(RabbitMqEnum.QueueEnum.TEST_DURABLE_QUEUE.name()).withArgument("Durable_Queue","1234567890").build();
 	}
+
+	@Bean
+	public Queue delayQueue(){
+		return QueueBuilder.durable(RabbitMqEnum.QueueEnum.TEST_DELAY_QUEUE.name()).deadLetterExchange(RabbitMqEnum.ExchangeEnum.TEST_DEAD_LETTER_EXCHANGE.name()).deadLetterRoutingKey(RabbitMqEnum.RoutingKey.TEST_DEAD_LETTER_EXCHANGE_KEY.name()).build();
+	}
+
 
 	@Bean
 	public Binding deadLetterBinding(){
@@ -87,17 +106,15 @@ public class RabbitMqMessageConfig{
 	}
 
 
-	/**
-	 * QueueBuilder
-	 */
-	@Bean
-	public Queue durableQueue(){
-		return QueueBuilder.durable(RabbitMqEnum.QueueEnum.TEST_DURABLE_QUEUE.name()).withArgument("Durable_Queue","1234567890").build();
-	}
 
 	@Bean
 	public Binding bindingDurable(Queue durableQueue,DirectExchange directExchange){
 		return BindingBuilder.bind(durableQueue).to(directExchange).with(RabbitMqEnum.RoutingKey.TEST_ONE_EXCHANGE_BINDING_TWO_QUEUES.name());
+	}
+
+	@Bean
+	public Binding delayBinding(){
+		return BindingBuilder.bind(delayQueue()).to(delayExchange()).with(RabbitMqEnum.RoutingKey.TEST_DELAY_ROUTING_KEY.name());
 	}
 
 
@@ -121,13 +138,19 @@ public class RabbitMqMessageConfig{
 		admin.declareQueue(logQueue());
 		admin.declareQueue(durableQueue());
 		admin.declareQueue(deadLetterArgQueue());
+		admin.declareQueue(delayQueue());
+
 		admin.declareExchange(deadLetterExchange());
 		admin.declareExchange(directExchange());
 		admin.declareExchange(fanoutExchange());
+		admin.declareExchange(delayExchange());
+
 		admin.declareBinding(binding);
 		admin.declareBinding(bindingDurable);
 		admin.declareBinding(deadLetterBinding());
 		admin.declareBinding(fanoutBinding());
+		admin.declareBinding(delayBinding());
+
 		admin.afterPropertiesSet();
 		return admin;
 	}

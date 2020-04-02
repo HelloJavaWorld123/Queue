@@ -7,7 +7,7 @@ spring:
     virtual-host: virtual_host_test
     requested-heartbeat: 30
     publisher-returns: true
-    publisher-confirm-type: simple
+    publisher-confirm-type: correlated
     #设置多大是合理的？？？
     connection-timeout: 100
     cache:

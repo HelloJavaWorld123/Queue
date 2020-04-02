@@ -12,11 +12,13 @@ import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.boot.autoconfigure.jms.JmsProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -71,7 +73,7 @@ public class RabbitMqSendMessageServiceImpl implements RabbitMqSendMessageServic
 	public void sendMessage(String exchange, String routingKey, String message, CorrelationData correlationData){
 		Assert.isTrue(!StringUtils.isAllEmpty(exchange,routingKey,message) || Objects.nonNull(correlationData),"发送消息的参数不能为空");
 		rabbitTemplate.setConfirmCallback(defaultConfirmCallBackService);
-
+		rabbitTemplate.setReturnCallback(defaultReturnCallBackService);
 		Message message1 = MessageBuilder.withBody(message.getBytes()).setDeliveryMode(MessageDeliveryMode.PERSISTENT).build();
 		rabbitTemplate.convertAndSend(exchange,routingKey,message1,correlationData);
 	}
@@ -125,6 +127,23 @@ public class RabbitMqSendMessageServiceImpl implements RabbitMqSendMessageServic
 			LoggerUtils.info("等待确认的结果是：wait For Confirms Result: {" + waitForConfirms + "}");
 			return waitForConfirms;
 		});
+	}
+
+	@Override
+	public void sendDelayMessage(String message, CorrelationData correlationData){
+		Message messageInfo = MessageBuilder
+				.withBody(message.getBytes())
+				.setDeliveryMode(MessageDeliveryMode.PERSISTENT)
+				.setContentType("application/json")
+				.setContentEncoding(StandardCharsets.UTF_8.name())
+				.setHeader("x-delay","300000")
+				.build();
+
+		rabbitTemplate.setConfirmCallback(defaultConfirmCallBackService);
+		rabbitTemplate.setReturnCallback(defaultReturnCallBackService);
+
+		rabbitTemplate.convertAndSend(RabbitMqEnum.ExchangeEnum.TEST_DELAY_EXCHANGE.name(),RabbitMqEnum.RoutingKey.TEST_DELAY_ROUTING_KEY.name(),messageInfo,correlationData);
+
 	}
 
 }

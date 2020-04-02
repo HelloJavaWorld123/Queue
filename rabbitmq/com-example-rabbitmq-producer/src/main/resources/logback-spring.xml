@@ -61,7 +61,7 @@
     </logger>
 
 
-    <root level="DEBUG">
+    <root level="INFO">
 <!--        <appender-ref ref="AMQP"/>-->
         <appender-ref ref="CONSOLE"/>
     </root>

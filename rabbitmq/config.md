@@ -308,7 +308,20 @@
                   2.如果DLQ的Exchang的rounting key没有声明,那么使用向死信队列推送的消息的Routing Key;
           
     3.延迟队列
-        3.1 方案一：在RabbitMq3.6.0中有延迟插件,在发送消息时：通过MessageProperties设置message的头部：Set the x-delay header
+        3.1 方案一：使用社区的插件:rabbitmq_delayed_message_exchang 再声明Exchange时增加delay(),在发送消息时，对消息增加 x-delay 头部参数
+            ```
+                Message messageInfo = MessageBuilder
+                        .withBody(message.getBytes())
+                        .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
+                        .setContentType("application/json")
+                        .setContentEncoding(StandardCharsets.UTF_8.name())
+                        //单位是 毫秒 在没有启用rabbitmq_delayed_message_exchange 插件时 是不能使用 该参数的
+                        .setHeader("x-delay","300000")
+                        .build();
+            ```
+            这种方法 消息会在Exchange中暂存,在没有达到时间的时候消息不会发送到Queue中
+         3.2 方案二：使用 DLQ:
+            对正常的消息设置过期的时间(expire),当达到过期时间时，该消息发送到DLQ Exchang 以及 Queue中,再即时发送出去
     4.Transactional
       4.1 XA Transaction:
         4.1.1 TM(Transaction Management)+RM(Resource Management)
@@ -323,7 +336,10 @@
     6.对已经持久化的队列进行属性的新增或者删除,再启动时会报错错误.因为已经持久化的队列不能再更新属性,必须先删除才能再更新
     7.怎么保证消息的顺序
     8.如果在mq服务器异步通知过程中，由于网络原因或者mq正好准备回调就挂了，导致发布者没有收到确认发送的消息怎么办？
+        Confirm机制，每条消息都设置唯一的ID标识,增加Confirm监听机制，对于没有Confirm的消息,会回调ConfirmCallBack;
+        以及正确投递到了Exchange中,但是没有被Queue正确接收时,ReturnCallBack将会被回调
     9.mq 迟迟未收到consumer的ack怎么处理？
+        9.1 通过CorrelationData的异步回调机制,当consumer恢复ack或者Nack时,都可以接收到回调
     10.集群中节点之间数据同步的模式：
         10.1.Async
     11.RabbitMQ集群的分区模式有哪几种？各自的特点是什么？(脑裂问题)
