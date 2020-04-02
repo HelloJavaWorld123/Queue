@@ -90,8 +90,8 @@
       3. maxConcurrentConsumers: 除了{concurrentConsumers},最多多少个消费者(在当前消费者无法消费时，会自动的启动多余的消费者)
       4. startConsumerMinInterval: 启动其他消费者的最大时间间隔
       5. stopConsumerMinInterval: 停止其他的消费者最小的时间间隔
-      6. consecutiveActiveTrigger:
-      7. consecutiveIdleTrigger:
+      6. consecutiveActiveTrigger: 连续收到消息达到多少条时，触发增加消费者的触发器
+      7. consecutiveIdleTrigger: 在消费者空闲多长时间后，触发停掉消费者，减少不必要的消费者的数量
       8. batchSize: 批量处理的消息数量。会以当前数量循环获取消息数量，进行批处理
       9. consumerBatchEnabled: 批量消费消息
       10.DebatchingEnable:是否支持批量处理的消息分批处理(与Batch Size 和 ConsumerBatchEnable 一起使用)
@@ -339,7 +339,7 @@
         Confirm机制，每条消息都设置唯一的ID标识,增加Confirm监听机制，对于没有Confirm的消息,会回调ConfirmCallBack;
         以及正确投递到了Exchange中,但是没有被Queue正确接收时,ReturnCallBack将会被回调
     9.mq 迟迟未收到consumer的ack怎么处理？
-        9.1 通过CorrelationData的异步回调机制,当consumer恢复ack或者Nack时,都可以接收到回调
+        9.1 
     10.集群中节点之间数据同步的模式：
         10.1.Async
     11.RabbitMQ集群的分区模式有哪几种？各自的特点是什么？(脑裂问题)

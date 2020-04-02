@@ -78,9 +78,7 @@ public class RabbitMqConnListenerConfig{
 	}
 
 
-	/**
-	 * 该Bean 的name(rabbitListenerContainerFactory) 是注解@RabbitListener的ContainerFacotory的默认取值
-	 */
+
 	/**
 	 * 创建 SimpleMessageListenerContainer 的工厂
 	 * <p>
@@ -90,6 +88,8 @@ public class RabbitMqConnListenerConfig{
 	 * 3.自动缩容的消费者共用同一个线程
 	 * DMLC -- DirectRabbitListenerContainerFactory
 	 * 1.自动缩容的消费者线程间隔离，
+	 *
+	 * 该Bean 的name(rabbitListenerContainerFactory) 是注解@RabbitListener的ContainerFacotory的默认取值
 	 */
 	@Bean
 	public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(CachingConnectionFactory cachingConnectionFactory, RetryTemplate retryTemplate, ContentTypeDelegatingMessageConverter contentTypeDelegatingMessageConverter){
@@ -98,7 +98,7 @@ public class RabbitMqConnListenerConfig{
 		simpleRabbitListenerContainerFactory.setAutoStartup(Boolean.TRUE);
 
 		//设置当前消费者 从queue中一次性获取消息的数量,影响消费者的吞吐量 默认值250
-//		simpleRabbitListenerContainerFactory.setPrefetchCount();
+		simpleRabbitListenerContainerFactory.setPrefetchCount(250);
 
 		//自定义任务执行的线程池
 		simpleRabbitListenerContainerFactory.setTaskExecutor(simpleAsyncTaskExecutor);
@@ -134,7 +134,7 @@ public class RabbitMqConnListenerConfig{
 		//容器空闲间隔是事件
 //		simpleRabbitListenerContainerFactory.setIdleEventInterval();
 
-		//在队列中的queue不能使用时 是否将容器快速失败机制
+		//在队列中的queue不能使用时 是否将容器快速失败机制 需要RabbitAdmin的支持 When 'mismatchedQueuesFatal' is 'true', there must be exactly one AmqpAdmin in the context or you must inject one into this container;
 //		simpleRabbitListenerContainerFactory.setMissingQueuesFatal(Boolean.TRUE);
 //		simpleRabbitListenerContainerFactory.setMismatchedQueuesFatal(Boolean.TRUE);
 
@@ -145,16 +145,7 @@ public class RabbitMqConnListenerConfig{
 //		simpleRabbitListenerContainerFactory.setDeBatchingEnabled(Boolean.TRUE);
 //		simpleRabbitListenerContainerFactory.setBatchingStrategy();
 
-
-		//自定义线程池 默认为：SimpleAsyncTaskExecutor(线程不会复用,每一个任务创建一个新的线程)
-		simpleRabbitListenerContainerFactory.setTaskExecutor(simpleAsyncTaskExecutor);
-
-//		When 'mismatchedQueuesFatal' is 'true', there must be exactly one AmqpAdmin in the context or you must inject one into this container;
-//		simpleRabbitListenerContainerFactory.setMismatchedQueuesFatal(rabbitProperties.getListener().getSimple().isMissingQueuesFatal());
-
-		//RabbitMq的事务配置 当前的Channel是否是事务的
-//		simpleRabbitListenerContainerFactory.setChannelTransacted(Boolean.TRUE);
-//		simpleRabbitListenerContainerFactory.setTransactionManager();
+		simpleRabbitListenerContainerFactory.setTaskExecutor(threadPoolTaskExecutor);
 		return simpleRabbitListenerContainerFactory;
 	}
 
@@ -201,9 +192,8 @@ public class RabbitMqConnListenerConfig{
 
 	@Bean
 	public Jackson2JsonMessageConverter jackson2JsonMessageConverter(DefaultClassMapper classMapper){
-		Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
-//		converter.setClassMapper(classMapper);
-		return converter;
+		//		converter.setClassMapper(classMapper);
+		return new Jackson2JsonMessageConverter();
 	}
 
 	@Bean
