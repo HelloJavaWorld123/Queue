@@ -19,7 +19,7 @@ public class DefaultConfirmCallBackService implements RabbitTemplate.ConfirmCall
 	@Override
 	public void confirm(CorrelationData correlationData, boolean ack, String cause){
 		if(Objects.nonNull(correlationData)){
-			LoggerUtils.info(String.format("返回的确认的消息体id是:{{%s}},确认消息内容是:{{%s}},是否已经确认:{{%s}},cause:{{%s}}", correlationData.toString(), correlationData.getReturnedMessage(), ack, cause));
+			LoggerUtils.info(String.format("Confirm Call Back 消息体id是:{{%s}},确认消息内容是:{{%s}},是否已经确认:{{%s}},cause:{{%s}}", correlationData.toString(), correlationData.getReturnedMessage(), ack, cause));
 		} else{
 			LoggerUtils.info("是否已经确认:{"+ack+"},cause:{"+cause+"}");
 		}

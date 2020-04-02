@@ -81,6 +81,11 @@ public class RabbitMqMessageConfig{
 		return BindingBuilder.bind(queue).to(directExchange).with(RabbitMqEnum.RoutingKey.TEST_ROUTING_KEY);
 	}
 
+	@Bean
+	public Binding fanoutBinding(){
+		return BindingBuilder.bind(queue()).to(fanoutExchange());
+	}
+
 
 	/**
 	 * QueueBuilder
@@ -122,6 +127,7 @@ public class RabbitMqMessageConfig{
 		admin.declareBinding(binding);
 		admin.declareBinding(bindingDurable);
 		admin.declareBinding(deadLetterBinding());
+		admin.declareBinding(fanoutBinding());
 		admin.afterPropertiesSet();
 		return admin;
 	}

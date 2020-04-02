@@ -1,9 +1,11 @@
 package com.example.rabbitmq.producer.service.impl;
 
 import com.example.rabbit.common.enums.RabbitMqEnum;
+import com.example.rabbit.common.utils.LoggerUtils;
 import com.example.rabbitmq.producer.service.DefaultConfirmCallBackService;
 import com.example.rabbitmq.producer.service.DefaultReturnCallBackService;
 import com.example.rabbitmq.producer.service.RabbitMqSendMessageService;
+import com.rabbitmq.client.ConfirmCallback;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -86,7 +89,7 @@ public class RabbitMqSendMessageServiceImpl implements RabbitMqSendMessageServic
 		StringBuilder callBackConfirm = new StringBuilder();
 		rabbitTemplate.invoke(operations -> {
 			operations.convertSendAndReceive(exchange, routingKey, message, correlationData);
-			operations.waitForConfirms(1000);
+			boolean b = operations.waitForConfirms(1000);
 			return true;
 		},(tag,multi)->callBackConfirm.append("ack-callback:").append(tag).append(multi)
 				,(tag,multi)->callBackConfirm.append("nack-callback:").append(tag).append(multi));
@@ -109,6 +112,19 @@ public class RabbitMqSendMessageServiceImpl implements RabbitMqSendMessageServic
 				message,
 				correlationData
 		);
+	}
+
+	@Override
+	public void sendWaitConfirmCallBack(String message, CorrelationData correlationData){
+		Message messageInfo = MessageBuilder.withBody(message.getBytes()).setDeliveryMode(MessageDeliveryMode.PERSISTENT).build();
+		rabbitTemplate.setConfirmCallback(defaultConfirmCallBackService);
+		rabbitTemplate.setReturnCallback(defaultReturnCallBackService);
+		rabbitTemplate.invoke(options -> {
+			options.convertSendAndReceive(RabbitMqEnum.ExchangeEnum.TEST_FANOUT_EXCHANGE.name(), RabbitMqEnum.RoutingKey.TEST_ROUTING_KEY.name(), messageInfo, correlationData);
+			boolean waitForConfirms = options.waitForConfirms(10);
+			LoggerUtils.info("等待确认的结果是：wait For Confirms Result: {" + waitForConfirms + "}");
+			return waitForConfirms;
+		});
 	}
 
 }

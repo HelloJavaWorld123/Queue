@@ -50,6 +50,8 @@ public class RabbitTransactionConnectionConfig{
 
 	private final CustomerConnectionListener customerConnectionListener;
 
+	private final static String PRODUCER_CONNECTION_NAME = "spring.transaction.application.name";
+
 	public RabbitTransactionConnectionConfig(Environment environment, ThreadPoolTaskExecutor threadPoolTaskExecutor, CustomerChannelListener customerChannelListener, CustomerRabbitExceptionHandler exceptionHandler, RabbitTransactionConfigProperties configProperties, CustomerConnectionListener customerConnectionListener){
 		this.environment = environment;
 		this.threadPoolTaskExecutor = threadPoolTaskExecutor;
@@ -78,9 +80,9 @@ public class RabbitTransactionConnectionConfig{
 			retryTemplate = new RetryTemplate();
 
 			ExponentialRandomBackOffPolicy randomBackOffPolicy = new ExponentialRandomBackOffPolicy();
-			randomBackOffPolicy.setInitialInterval(10000);
-			randomBackOffPolicy.setMaxInterval(120000);
-			randomBackOffPolicy.setMultiplier(1.5);
+			randomBackOffPolicy.setInitialInterval(configProperties.getRetry().getInitialInterval().toMillis());
+			randomBackOffPolicy.setMaxInterval(configProperties.getRetry().getMaxInterval().toMillis());
+			randomBackOffPolicy.setMultiplier(configProperties.getRetry().getMultiplier());
 			retryTemplate.setBackOffPolicy(randomBackOffPolicy);
 
 			TimeoutRetryPolicy timeoutRetryPolicy = new TimeoutRetryPolicy();
@@ -151,7 +153,7 @@ public class RabbitTransactionConnectionConfig{
 
 	@Bean(name = "transactionalConnectionNameStrategy")
 	public SimplePropertyValueConnectionNameStrategy connectionNameStrategy(){
-		SimplePropertyValueConnectionNameStrategy strategy = new SimplePropertyValueConnectionNameStrategy("spring.transaction.application.name");
+		SimplePropertyValueConnectionNameStrategy strategy = new SimplePropertyValueConnectionNameStrategy(PRODUCER_CONNECTION_NAME);
 		strategy.setEnvironment(environment);
 		return strategy;
 	}

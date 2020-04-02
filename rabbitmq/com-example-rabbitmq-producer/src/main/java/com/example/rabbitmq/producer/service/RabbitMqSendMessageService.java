@@ -55,4 +55,6 @@ public interface RabbitMqSendMessageService{
 	 * @param messageBody ：消息体
 	 */
 	void sendTransactionMessage(CorrelationData correlationData, String messageBody);
+
+	void sendWaitConfirmCallBack(String message,CorrelationData correlationData);
 }

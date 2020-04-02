@@ -59,4 +59,13 @@ public class MessageController{
 	}
 
 
+	@RequestMapping("/send/waitForConfirm")
+	public ResponseEntity<String> sendWaitForConfirms(){
+		CorrelationData correlationData = new CorrelationData();
+		correlationData.setId("200000");
+		sendMessageService.sendWaitConfirmCallBack("111111",correlationData);
+		return ResponseEntity.ok().body("OK");
+	}
+
+
 }
