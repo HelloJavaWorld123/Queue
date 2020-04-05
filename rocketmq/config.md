@@ -1,6 +1,8 @@
 #### RocketMQ
 - namesrv: 类似于 Eureka 和 zookeeper 的功能,管理Broker集群节点元数据以及节点状态
     集群形式的namesrv相互独立,每个namesrv分别保存broker集群的元数据信息.
+    - 如果需要自定义配置参数,在conf 文件下 创建namesrv.properties文件  启动时 指定即可
+    
 - brokersrv:数据节点
     - broker.conf：配置Broker节点的信息
       - brokerClusterName：broker集群的名称,按照这个名称进行节点归类
@@ -13,6 +15,18 @@
       - fileReserverdTime: commitLog文件保留的最长时间;默认是 72小时;
       - deleteWhen: 当commitLog超过fileReserverdTime的时候,在几点(24小时制)执行删除动作.默认是 04(凌晨4点)
       - brokerRole: 当前节点的角色;
+        - ASYNC_MASTER: 异步主节点(在主节点介绍到客户端的message时,立马返回,在异步传送给slave)
+        - SYNC_MASTER：同步主节点(主节点接收到message，同时传送给slave,然后再返回给client)
+        - SLAVE 在同一个集群中的从节点(名称必须是这个 否则不识别)
+            - 在不能容忍消息丢失的情况下,使用AYNC_MASTER + SLAVE
+            - 能够容忍部分消息丢失,但对HA有要求时,使用ASYNC+SLAVE
+            - 否则可以只是用ASYNC_MASTER 
+      - brokerId:0或者1 (大于0); 0 表示当前节点为 master;否则大于零的值为从节点
+      - 启动时 使用 -c 指定需要使用的配置文件 
+      - flushDiskType: 数据刷盘类型:
+        - ASYNC_FLUSH
+        - SYNC_FLUSH : 可以使用 ASYNC_MASTER + SLAVE 的方案代替  提高性能
+        - ?????
 - VipChannel：监听的端口 相差为 -2
 
 #### Q&A
