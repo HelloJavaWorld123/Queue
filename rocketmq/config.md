@@ -28,6 +28,14 @@
         - SYNC_FLUSH : 可以使用 ASYNC_MASTER + SLAVE 的方案代替  提高性能
         - ?????
 - VipChannel：监听的端口 相差为 -2
+- clientConfig
+  - namesrvAddr : name Server Address
+  - instanceName: 配置MqClientId
+  - unitName:  MqClientId = ip@instanceName@unitName
+  - Producer:
+    - DefaultProducer
+    - TransactionalProducer
+  - Consumer:
 
 #### Q&A
 - 消息的有序性?

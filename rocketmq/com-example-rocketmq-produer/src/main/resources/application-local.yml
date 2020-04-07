@@ -1,0 +1,9 @@
+spring:
+  rocketmq:
+    name-server-address: 172.16.20.190:9876;172.16.20.190:9875
+    heartbeat-broker-interval: 30000
+    poll-name-server-interval: 30000
+    instance-name: rocketmq_producer_one
+    unit-name: rocketmq_producer_application
+    producer:
+      producer-group: rocketmq_producer_cluster_one

@@ -1,1 +1,5 @@
-
+server:
+  port: 18803
+spring:
+  application:
+    name: rocketmq_producer
