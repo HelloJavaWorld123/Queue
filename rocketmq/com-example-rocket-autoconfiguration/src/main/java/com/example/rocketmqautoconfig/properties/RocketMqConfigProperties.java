@@ -75,6 +75,8 @@ public class RocketMqConfigProperties{
 		/**
 		 *事务消息时 很重要（将Producer进行归类）
 		 * 如果不是事务消息 只要保证唯一
+		 * 不能使用默认的 org.apache.rocketmq.client.exception.MQClientException： producerGroup can not equal DEFAULT_PRODUCER, please specify another one
+		 * 区分 生产者
 		 */
 		private String producerGroup;
 
@@ -106,6 +108,40 @@ public class RocketMqConfigProperties{
 		private int maxMessageSize = 1024 * 1024 * 4;
 
 		private TraceDispatcher traceDispatcher = null;
+
+		/**
+		 * TransactionMQProducer 检查小城池的最小数量
+		 * 默认值为 1
+		 */
+		@Deprecated
+		private int checkThreadPoolMinSize = 1;
+
+		/**
+		 * TransactionMQProducer 检查小城池的最大数量
+		 * 默认值为 10
+		 */
+		@Deprecated
+		private int checkThreadPoolMaxSize = 10;
+
+		/**
+		 * TransactionMQProducer
+		 * 默认值 2000
+		 */
+		@Deprecated
+		private int checkRequestHoldMax = 2000;
+
+		/**
+		 * TransactionMQProducer
+		 * 自定义线程池的名字
+		 * 默认为 : producerExecutorService
+		 */
+		private String executorServiceBeanName;
+
+		/**
+		 * TransactionMQProducer
+		 *
+		 */
+		private String transactionListenerBeanName;
 
 	}
 

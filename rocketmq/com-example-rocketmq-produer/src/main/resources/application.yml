@@ -3,3 +3,5 @@ server:
 spring:
   application:
     name: rocketmq_producer
+  profiles:
+    active: local
