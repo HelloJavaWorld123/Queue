@@ -7,3 +7,6 @@ spring:
     unit-name: rocketmq_producer_application
     producer:
       producer-group: rocketmq_producer_cluster_one
+      default-topic-queue-nums: 5
+      retry-times-when-send-async-failed: 3
+      retry-an-other-broker-when-not-store-ok: false
