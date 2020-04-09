@@ -1,10 +1,11 @@
 package com.example.rocketmqautoconfig;
 
 import com.example.rocketmq.common.util.LogUtils;
+import com.example.rocketmqautoconfig.properties.RocketMqConfigProperties;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.SmartLifecycle;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -15,6 +16,7 @@ import java.util.Objects;
  * Desc:
  */
 @Component
+@EnableConfigurationProperties(value = {RocketMqConfigProperties.class})
 public class RocketMqProducerStartUp implements SmartLifecycle{
 
 
@@ -22,8 +24,11 @@ public class RocketMqProducerStartUp implements SmartLifecycle{
 
 	private final DefaultMQProducer defaultMQProducer;
 
-	public RocketMqProducerStartUp(DefaultMQProducer defaultMQProducer){
+	private final RocketMqConfigProperties rocketMqConfigProperties;
+
+	public RocketMqProducerStartUp(DefaultMQProducer defaultMQProducer, RocketMqConfigProperties rocketMqConfigProperties){
 		this.defaultMQProducer = defaultMQProducer;
+		this.rocketMqConfigProperties = rocketMqConfigProperties;
 	}
 
 
@@ -31,14 +36,16 @@ public class RocketMqProducerStartUp implements SmartLifecycle{
 	public void start(){
 		if(!start){
 			try{
-				LogUtils.info("启动Producer");
-				defaultMQProducer.start();
-				start = true;
+				if(rocketMqConfigProperties.getProducer().isEnable()){
+					LogUtils.info("启动Producer");
+					defaultMQProducer.start();
+					start = true;
+					LogUtils.info("启动Producer成功");
+				}
 			} catch(MQClientException e){
 				LogUtils.error("启动 Producer 异常：", e);
 				start = false;
 			}
-			LogUtils.info("启动Producer成功");
 		}
 	}
 

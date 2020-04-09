@@ -1,2 +1,7 @@
 server:
   port: 18804
+spring:
+  application:
+    name: rocket_consumer_one
+  profiles:
+    active: local

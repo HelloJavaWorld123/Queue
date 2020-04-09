@@ -1,27 +1,24 @@
 package com.example.rocketmqautoconfig;
 
 import com.example.rocketmq.common.util.IpUtils;
-import com.example.rocketmq.common.util.LogUtils;
 import com.example.rocketmqautoconfig.properties.RocketMqConfigProperties;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.client.consumer.MQConsumer;
-import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.consumer.DefaultLitePullConsumer;
+import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.apache.rocketmq.client.producer.MQProducer;
 import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.apache.rocketmq.common.MixAll;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @author : RXK
@@ -29,22 +26,107 @@ import java.util.concurrent.ExecutorService;
  * Desc: 配置 RocketMq 的 DefaultRocketMqProducer
  */
 @Configuration
-@ConditionalOnProperty(prefix = "spring.rocketmq", name = "nameServerAddress", matchIfMissing = true,havingValue = "true")
+@ConditionalOnProperty(prefix = "spring.rocketmq",
+                       name = "nameServerAddress",
+                       matchIfMissing = true,
+                       havingValue = "true")
 @EnableConfigurationProperties(value = {RocketMqConfigProperties.class})
 public class RocketMqAutoConfig{
 
-	@Autowired
-	private ApplicationContext applicationContext;
+	private final RocketMqConfigProperties rocketMqConfigProperties;
 
-	@Autowired
-	private RocketMqConfigProperties rocketMqConfigProperties;
+	public RocketMqAutoConfig(RocketMqConfigProperties rocketMqConfigProperties){
+		this.rocketMqConfigProperties = rocketMqConfigProperties;
+	}
 
 
 	@Bean
+	@ConditionalOnProperty(prefix = "spring.rocketmq",value = "producer.enable",
+	                       havingValue = "true",
+	                       matchIfMissing = false)
 	@ConditionalOnMissingBean(value = DefaultMQProducer.class)
 	@SuppressWarnings("uncheck")
-	public DefaultMQProducer defaultMQProducer(){
-		DefaultMQProducer producer = new DefaultMQProducer();
+	public DefaultMQProducer defaultMqProducer(){
+		if(rocketMqConfigProperties.getProducer().isEnable()){
+			DefaultMQProducer producer = new DefaultMQProducer();
+			commonProducerConfig(producer);
+			return producer;
+		}
+		return null;
+	}
+
+
+	@Bean
+	@ConditionalOnProperty(prefix = "spring.rocketmq",value = "producer.enable",
+	                       matchIfMissing = false)
+	@ConditionalOnMissingBean(TransactionMQProducer.class)
+	public TransactionMQProducer transactionMqProducer(){
+		TransactionMQProducer transactionMqProducer = new TransactionMQProducer();
+		commonProducerConfig(transactionMqProducer);
+
+
+		//事务句柄的参数设置
+		transactionMqProducer.setExecutorService(threadPoolTaskExecutor());
+
+		return transactionMqProducer;
+	}
+
+	@Bean
+	@ConditionalOnProperty(prefix = "spring.rocketmq",value = "consumer.enable",
+	                       havingValue = "true",
+	                       matchIfMissing = false)
+	@ConditionalOnMissingBean(value = DefaultMQPushConsumer.class)
+	public DefaultMQPushConsumer defaultMqPushConsumer(){
+		if(rocketMqConfigProperties.getConsumer().isEnable()){
+			DefaultMQPushConsumer consumer = new DefaultMQPushConsumer();
+			RocketMqConfigProperties.Consumer propertiesConsumer = rocketMqConfigProperties.getConsumer();
+			consumer.setNamesrvAddr(rocketMqConfigProperties.getNameServerAddress());
+			consumer.setNamespace(rocketMqConfigProperties.getNameSpace());
+			consumer.setUnitName(rocketMqConfigProperties.getUnitName());
+			consumer.setUseTLS(rocketMqConfigProperties.isUseTLS());
+			consumer.setLanguage(rocketMqConfigProperties.getLanguageCode());
+			consumer.setHeartbeatBrokerInterval(rocketMqConfigProperties.getHeartbeatBrokerInterval());
+			consumer.setClientCallbackExecutorThreads(rocketMqConfigProperties.getClientCallBackExecutorThreads());
+			consumer.setPollNameServerInterval(rocketMqConfigProperties.getPollNameServerInterval());
+			consumer.setPullTimeDelayMillsWhenException(rocketMqConfigProperties.getPullTimeDelayMillsWhenException());
+			consumer.setUnitMode(rocketMqConfigProperties.isUnitMode());
+
+			consumer.setConsumerGroup(propertiesConsumer.getConsumerGroup());
+			consumer.setConsumeThreadMin(propertiesConsumer.getConsumerThreadMin());
+			consumer.setConsumeThreadMax(propertiesConsumer.getConsumerThreadMax());
+			consumer.setMaxReconsumeTimes(propertiesConsumer.getMaxReconsumeTimes());
+			consumer.setConsumeConcurrentlyMaxSpan(propertiesConsumer.getConsumeConcurrentlyMaxSpan());
+			consumer.setPullThresholdForQueue(propertiesConsumer.getPullThresholdForQueue());
+			consumer.setPullThresholdSizeForQueue(propertiesConsumer.getPullThresholdSizeForQueue());
+			consumer.setPullThresholdForTopic(propertiesConsumer.getPullThresholdForTopic());
+			consumer.setPullThresholdSizeForTopic(propertiesConsumer.getPullThresholdSizeForTopic());
+			consumer.setPullInterval(propertiesConsumer.getPullInterval());
+			consumer.setConsumeMessageBatchMaxSize(propertiesConsumer.getConsumeMessageBatchMaxSize());
+			consumer.setPullBatchSize(propertiesConsumer.getPullBatchSize());
+			consumer.setPostSubscriptionWhenPull(propertiesConsumer.isPostSubscriptionWhenPull());
+			consumer.setMessageModel(propertiesConsumer.getMessageModel());
+			consumer.setConsumeFromWhere(propertiesConsumer.getConsumeFromWhere());
+			consumer.setConsumeTimestamp(propertiesConsumer.getConsumeTimestamp());
+			consumer.setAllocateMessageQueueStrategy(propertiesConsumer.getAllocateMessageQueueStrategy());
+			consumer.setMessageListener(propertiesConsumer.getMessageListener());
+			consumer.setSuspendCurrentQueueTimeMillis(propertiesConsumer.getSuspendCurrentQueueTimeMillis());
+			consumer.setConsumeTimeout(propertiesConsumer.getConsumeTimeout());
+			consumer.setAdjustThreadPoolNumsThreshold(propertiesConsumer.getAdjustThreadPoolNumsThreshold());
+
+			return consumer;
+		}
+		return null;
+	}
+
+	/**
+	 * todo
+	 */
+	public DefaultLitePullConsumer defaultLitePullConsumer(){
+		return null;
+	}
+
+
+	private void commonProducerConfig(DefaultMQProducer producer){
 		producer.setNamesrvAddr(getNameSrvAddr());
 
 		producer.setInstanceName(getInstanceName());
@@ -61,49 +143,6 @@ public class RocketMqAutoConfig{
 		producer.setDefaultTopicQueueNums(rocketMqConfigProperties.getProducer().getDefaultTopicQueueNums());
 		producer.setRetryTimesWhenSendAsyncFailed(rocketMqConfigProperties.getProducer().getRetryTimesWhenSendAsyncFailed());
 		producer.setRetryAnotherBrokerWhenNotStoreOK(rocketMqConfigProperties.getProducer().isRetryAnOtherBrokerWhenNotStoreOk());
-
-		return producer;
-	}
-
-	@Bean
-	@ConditionalOnMissingBean(TransactionMQProducer.class)
-	public TransactionMQProducer transactionMQProducer(){
-		TransactionMQProducer transactionMQProducer = new TransactionMQProducer();
-		transactionMQProducer.setNamesrvAddr(getNameSrvAddr());
-
-		transactionMQProducer.setInstanceName(getInstanceName());
-		transactionMQProducer.setUnitName(getUnitName());
-
-		transactionMQProducer.setClientCallbackExecutorThreads(rocketMqConfigProperties.getClientCallBackExecutorThreads());
-
-		transactionMQProducer.setNamespace(rocketMqConfigProperties.getNameSpace());
-
-		transactionMQProducer.setPollNameServerInterval(rocketMqConfigProperties.getPollNameServerInterval());
-		transactionMQProducer.setHeartbeatBrokerInterval(rocketMqConfigProperties.getHeartbeatBrokerInterval());
-
-		transactionMQProducer.setProducerGroup(rocketMqConfigProperties.getProducer().getProducerGroup());
-		transactionMQProducer.setDefaultTopicQueueNums(rocketMqConfigProperties.getProducer().getDefaultTopicQueueNums());
-		transactionMQProducer.setRetryTimesWhenSendAsyncFailed(rocketMqConfigProperties.getProducer().getRetryTimesWhenSendAsyncFailed());
-		transactionMQProducer.setRetryAnotherBrokerWhenNotStoreOK(rocketMqConfigProperties.getProducer().isRetryAnOtherBrokerWhenNotStoreOk());
-
-		/**
-		 * 事务句柄的参数设置
-		 */
-
-		transactionMQProducer.setExecutorService(getExecutorService());
-
-
-		return transactionMQProducer;
-	}
-
-	private ExecutorService getExecutorService(){
-		String executorServiceBeanName = rocketMqConfigProperties.getProducer().getExecutorServiceBeanName();
-		if(StringUtils.isNotEmpty(executorServiceBeanName)){
-			Object applicationContextBean = applicationContext.getBean(executorServiceBeanName);
-		}else{
-
-		}
-		return null;
 	}
 
 
@@ -111,7 +150,7 @@ public class RocketMqAutoConfig{
 		String unitName = rocketMqConfigProperties.getUnitName();
 		if(StringUtils.isNotEmpty(unitName)){
 			return unitName;
-		}else{
+		} else{
 			return null;
 		}
 	}
@@ -125,7 +164,7 @@ public class RocketMqAutoConfig{
 			return IpUtils.ipAndName();
 		} else if(StringUtils.isEmpty(instanceName)){
 			return String.valueOf(MixAll.getPID());
-		}else{
+		} else{
 			return null;
 		}
 	}
@@ -137,4 +176,20 @@ public class RocketMqAutoConfig{
 		}
 		return nameServerAddress;
 	}
+
+
+	@Bean
+	public ThreadPoolExecutor threadPoolTaskExecutor(){
+		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+		executor.setCorePoolSize(rocketMqConfigProperties.getConsumerThreadPool().getCorePoolSize());
+		executor.setMaxPoolSize(rocketMqConfigProperties.getConsumerThreadPool().getMaxPoolSize());
+		executor.setKeepAliveSeconds(rocketMqConfigProperties.getConsumerThreadPool().getKeepLiveSeconds());
+		executor.setRejectedExecutionHandler(rocketMqConfigProperties.getConsumerThreadPool().getRejectedExecutionHandler());
+		executor.setWaitForTasksToCompleteOnShutdown(rocketMqConfigProperties.getConsumerThreadPool().isWaitForTasksToCompleteWhenShutDown());
+		executor.setAllowCoreThreadTimeOut(rocketMqConfigProperties.getConsumerThreadPool().isAllowCoreThreadTimeOut());
+		executor.setAwaitTerminationSeconds(rocketMqConfigProperties.getConsumerThreadPool().getAwaitTerminationForSeconds());
+		executor.initialize();
+		return executor.getThreadPoolExecutor();
+	}
+
 }

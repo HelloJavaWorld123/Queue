@@ -42,8 +42,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.rocketmq</groupId>
-            <artifactId>rocketmq-client</artifactId>
+            <groupId>com.example</groupId>
+            <artifactId>rocketmq-autoconfig</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

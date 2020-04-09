@@ -8,6 +8,7 @@ spring:
     use-t-l-s: true
 #    name-space: test_name_space
     producer:
+      enable: true
       producer-group: rocketmq_cluster_two
       default-topic-queue-nums: 5
       retry-times-when-send-async-failed: 3

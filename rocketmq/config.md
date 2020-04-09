@@ -36,6 +36,14 @@
     - DefaultProducer
     - TransactionalProducer
   - Consumer:
+    - DefaultMQPushConsumer
+      - MessageModel (比如 总共有15条message,3个consumer集群)
+        - Clustering: 消费者集群一共消费15条消息
+        - Broadcasting: 每一个消费者都消费15条,总共消费45条消息
+      - consumerFromWhere:
+        - CONSUMER_FROM_LAST_OFFSET
+        - CONSUMER_FROM_FIRST_OFFSET
+        - CONSUMER_FROM_TIMESTAMP
 
 #### Q&A
 - 消息的有序性?
