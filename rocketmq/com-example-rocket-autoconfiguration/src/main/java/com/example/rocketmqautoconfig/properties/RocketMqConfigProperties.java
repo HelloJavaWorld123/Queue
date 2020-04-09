@@ -148,8 +148,14 @@ public class RocketMqConfigProperties{
 	/**
 	 * 消费者配置
 	 */
+	@Data
 	public static class Consumer{
 
+		/**
+		 * 是否启用Consumer
+		 * 会启动 Consumer
+		 */
+		private boolean enable;
 	}
 
 

@@ -33,20 +33,22 @@ public class RocketMqProducerStartUp implements SmartLifecycle{
 			try{
 				LogUtils.info("启动Producer");
 				defaultMQProducer.start();
+				start = true;
 			} catch(MQClientException e){
-				LogUtils.error("启动 Producer 异常：",e);
+				LogUtils.error("启动 Producer 异常：", e);
+				start = false;
 			}
-			start = true;
-			LogUtils.info("启动Producer成功过");
+			LogUtils.info("启动Producer成功");
 		}
 	}
 
 	@Override
 	public void stop(){
 		if(Objects.nonNull(defaultMQProducer)){
-			if(start){
+			if(!start){
 				LogUtils.info("启动Producer");
 				defaultMQProducer.shutdown();
+				start = false;
 			}
 		}
 	}
