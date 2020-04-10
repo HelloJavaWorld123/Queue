@@ -6,6 +6,16 @@ spring:
     producer:
       enable: false
       #消费者订阅信息
-    consumer-subscribe-info:
-      TEST_CUSTOMER_TOPIC_TAG_ONE:
-        tag: TEST_CUSTOMER_TAG_ONE
+    consumer-subscribe-info-list:
+      - topic: TEST_CUSTOMER_TOPIC_TAG_ONE
+        tagType: tag
+        expression: TEST_CUSTOMER_TAG_ONE
+      - topic: TEST_CUSTOMER_TOPIC_TAG_TWO
+        tagType: tag
+        expression: TEST_CUSTOMER_TAG_ONE || TEST_CUSTOMER_TOPIC_TWO
+      - topic: TEST_CUSTOMER_TOPIC_SQL_ONE
+        tagType: sql92
+        expression: a > 9 AND b == 0
+      - topic: TEST_CUSTOMER_TOPIC_SQL_TWO
+        tagType: sql92
+        expression: a == 1 AND c < 100

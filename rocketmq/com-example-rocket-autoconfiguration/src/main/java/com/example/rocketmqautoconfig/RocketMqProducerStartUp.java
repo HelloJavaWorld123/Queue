@@ -4,6 +4,7 @@ import com.example.rocketmq.common.util.LogUtils;
 import com.example.rocketmqautoconfig.properties.RocketMqConfigProperties;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
@@ -22,14 +23,11 @@ public class RocketMqProducerStartUp implements SmartLifecycle{
 
 	private volatile boolean start = false;
 
-	private final DefaultMQProducer defaultMQProducer;
+	@Autowired(required = false)
+	private  DefaultMQProducer defaultMQProducer;
 
-	private final RocketMqConfigProperties rocketMqConfigProperties;
-
-	public RocketMqProducerStartUp(DefaultMQProducer defaultMQProducer, RocketMqConfigProperties rocketMqConfigProperties){
-		this.defaultMQProducer = defaultMQProducer;
-		this.rocketMqConfigProperties = rocketMqConfigProperties;
-	}
+	@Autowired
+	private RocketMqConfigProperties rocketMqConfigProperties;
 
 
 	@Override

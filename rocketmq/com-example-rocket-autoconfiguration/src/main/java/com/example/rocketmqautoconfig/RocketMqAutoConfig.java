@@ -28,8 +28,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Configuration
 @ConditionalOnProperty(prefix = "spring.rocketmq",
                        name = "nameServerAddress",
-                       matchIfMissing = true,
-                       havingValue = "true")
+                       matchIfMissing = true)
 @EnableConfigurationProperties(value = {RocketMqConfigProperties.class})
 public class RocketMqAutoConfig{
 
@@ -42,9 +41,7 @@ public class RocketMqAutoConfig{
 
 	@Bean
 	@ConditionalOnProperty(prefix = "spring.rocketmq",value = "producer.enable",
-	                       havingValue = "true",
 	                       matchIfMissing = false)
-	@ConditionalOnMissingBean(value = DefaultMQProducer.class)
 	@SuppressWarnings("uncheck")
 	public DefaultMQProducer defaultMqProducer(){
 		if(rocketMqConfigProperties.getProducer().isEnable()){
@@ -59,7 +56,6 @@ public class RocketMqAutoConfig{
 	@Bean
 	@ConditionalOnProperty(prefix = "spring.rocketmq",value = "producer.enable",
 	                       matchIfMissing = false)
-	@ConditionalOnMissingBean(TransactionMQProducer.class)
 	public TransactionMQProducer transactionMqProducer(){
 		TransactionMQProducer transactionMqProducer = new TransactionMQProducer();
 		commonProducerConfig(transactionMqProducer);
@@ -73,9 +69,7 @@ public class RocketMqAutoConfig{
 
 	@Bean
 	@ConditionalOnProperty(prefix = "spring.rocketmq",value = "consumer.enable",
-	                       havingValue = "true",
 	                       matchIfMissing = false)
-	@ConditionalOnMissingBean(value = DefaultMQPushConsumer.class)
 	public DefaultMQPushConsumer defaultMqPushConsumer(){
 		if(rocketMqConfigProperties.getConsumer().isEnable()){
 			DefaultMQPushConsumer consumer = new DefaultMQPushConsumer();

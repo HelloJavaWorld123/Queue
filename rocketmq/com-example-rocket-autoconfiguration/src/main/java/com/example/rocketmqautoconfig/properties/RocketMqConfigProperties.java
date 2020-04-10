@@ -83,7 +83,7 @@ public class RocketMqConfigProperties{
 
 	private RocketMqConfigProperties.ConsumerThreadPool consumerThreadPool = new RocketMqConfigProperties.ConsumerThreadPool();
 
-	private Map<String, Map<String, String>> consumerSubscribeInfo = new HashMap<>();
+	private List<ConsumerSubscribeInfo> consumerSubscribeInfoList = new ArrayList<>();
 
 
 	/**
@@ -358,5 +358,12 @@ public class RocketMqConfigProperties{
 		 */
 		private int awaitTerminationForSeconds = 60;
 
+	}
+
+	@Data
+	public static class ConsumerSubscribeInfo{
+		private String topic;
+		private String tagType;
+		private String expression;
 	}
 }
