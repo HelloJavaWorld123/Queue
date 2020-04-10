@@ -1,7 +1,25 @@
 #### RocketMQ
 - namesrv: 类似于 Eureka 和 zookeeper 的功能,管理Broker集群节点元数据以及节点状态
     集群形式的namesrv相互独立,每个namesrv分别保存broker集群的元数据信息.
-    - 如果需要自定义配置参数,在conf 文件下 创建namesrv.properties文件  启动时 指定即可
+    - 如果需要自定义配置参数,在conf 文件下 创建namesrv.properties文件  启动时 指定即可,指定的参数会覆盖默认的参数
+    - mqadmin getNamesrvConfig -n ip:port
+      - listenPort: name server 监听的端口
+      - serverChannelMaxIdleTimeSeconds: name server节点channel最大空闲时间节点
+      - serverCallbackExecutorThreads: 
+      - serverAsyncSemaphoreValue:
+      - serverSocketSndBufSize:
+      - rocketmqHome:
+      - clusterTest: 默认值false
+      - serverSelectorThreads: 默认值为 3
+      - useEpollNativeSelector: 默认值false
+      - orderMessageEnable: 默认值 false
+      - serverPooledByteBufAllocatorEnable: 默认值 true
+      - kvConfigPath: 默认值 /root/namesrv/kvConfig.json
+      - serverWorkerThreads: 默认值 8
+      - serverSocketRcvBufSize: 默认值 65535
+      - productEnvName: 默认值 center
+      - serverOneWaySemaphoreValue: 256
+      - configStorePath: 
     
 - brokersrv:数据节点
     - broker.conf：配置Broker节点的信息
@@ -9,9 +27,10 @@
       - brokerName:集群中节点的名称;集群中唯一
       - namesrvAddr: 当前节点连接的namesrv的地址(ip:port);多个地址分号隔开
       - listenPort: 当前节点监听的端口.默认是9876;当一台机器运行多个Broker的时候,需要自定义监听的地址
-      - storePathRootDir: 当前节点存储数据的文件夹;
+      - storePathRootDir: 当前节点存储数据的文件夹;指定了这个路径就在该路径下创建所有的文件包括但不限于(commitLog、ConsumerQueue、index等),与下面的文件路径互斥
       - storePathCommitLog:当前节点存储commitlog的路径
       - storePathConsumerQueue: 当前节点存储消费者队列的文件夹
+      - storePathIndex: 消息索引的存储路径
       - fileReserverdTime: commitLog文件保留的最长时间;默认是 72小时;
       - deleteWhen: 当commitLog超过fileReserverdTime的时候,在几点(24小时制)执行删除动作.默认是 04(凌晨4点)
       - brokerRole: 当前节点的角色;
@@ -27,6 +46,12 @@
         - ASYNC_FLUSH
         - SYNC_FLUSH : 可以使用 ASYNC_MASTER + SLAVE 的方案代替  提高性能
         - ?????
+      - autoCreateTopicEnable: 是否自动创建默认的topic
+      - autoCreateSubscriptionGroup: 是否自动创建订阅组
+    - 获取指定Broker的配置信息：mqadmin getBrokerConfig -b ip:port -n ip:port(namesrv的ip:port)
+      - brokerTopicEnable: 默认值 true; 是否将broker的名称作为Topic的名称自动生成
+      - clusterTopicEnale: 默认值 true；是否将Cluster的name作为topic 自动生成
+      - slaveReadEnable: 默认值false;
 - VipChannel：监听的端口 相差为 -2
 - clientConfig
   - namesrvAddr : name Server Address
@@ -65,3 +90,10 @@
 - 分布式事务
 - 延迟消息
 - 消息重试
+
+#### exception info
+- org.apache.rocketmq.client.exception.MQClientException: No route info of this topic: TEST_CUSTOMER_TOPIC_TAG_ONE
+  - autoCreateTopicEnable = false; 则要手动创建发送的topic,topic不存在时不会自动帮忙创建
+  - 官方建议 线下启动 线上关闭
+- org.apache.rocketmq.client.exception.MQClientException: allocateMessageQueueStrategy is null
+  - 消费端必须配置该策略

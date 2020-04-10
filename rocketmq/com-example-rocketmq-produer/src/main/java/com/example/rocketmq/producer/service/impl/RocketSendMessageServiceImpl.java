@@ -25,8 +25,8 @@ public class RocketSendMessageServiceImpl implements RocketSendMessageService{
 	@Override
 	public void sendNormalMessage(String messageBody) throws InterruptedException, RemotingException, MQClientException, MQBrokerException{
 		Message message = new Message(
-				RocketMQEnum.Topic.TEST_CUSTOMER_TOPIC.name(),
-				RocketMQEnum.Tag.TEST_CUSTOMER_TAG.name(),
+				RocketMQEnum.Topic.TEST_CUSTOMER_TOPIC_TAG_ONE.name(),
+				RocketMQEnum.Tag.TEST_CUSTOMER_TAG_ONE.name(),
 				messageBody.getBytes()
 		);
 		message.setInstanceId("10000000L");

@@ -3,6 +3,20 @@ spring:
     consumer:
       # 必须启动 才能启动者 默认是false
       enable: true
+      consumer-group: test_consumer_group_one
+      #一条消息消费超时的时间
+      consume-timeout: 10
+      message-model: clustering
+      consumer-thread-min: 20
+      consumer-thread-max: 50
+      max-reconsume-times: 3
+      thread-pool:
+        core-pool-size: 20
+        max-pool-size: 30
+        queue-capacity: 50
+        prefix-thread-name: rocketmq_consumer_
+        allow-core-thread-time-out: true
+      allocate-message-queue-strategy:
     producer:
       enable: false
       #消费者订阅信息
@@ -12,7 +26,7 @@ spring:
         expression: TEST_CUSTOMER_TAG_ONE
       - topic: TEST_CUSTOMER_TOPIC_TAG_TWO
         tagType: tag
-        expression: TEST_CUSTOMER_TAG_ONE || TEST_CUSTOMER_TOPIC_TWO
+        expression: TEST_CUSTOMER_TAG_ONE || TEST_CUSTOMER_TAG_TWO
       - topic: TEST_CUSTOMER_TOPIC_SQL_ONE
         tagType: sql92
         expression: a > 9 AND b == 0

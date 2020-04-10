@@ -81,8 +81,6 @@ public class RocketMqConfigProperties{
 
 	private RocketMqConfigProperties.Consumer consumer = new RocketMqConfigProperties.Consumer();
 
-	private RocketMqConfigProperties.ConsumerThreadPool consumerThreadPool = new RocketMqConfigProperties.ConsumerThreadPool();
-
 	private List<ConsumerSubscribeInfo> consumerSubscribeInfoList = new ArrayList<>();
 
 
@@ -96,6 +94,11 @@ public class RocketMqConfigProperties{
 		 * 是否启动 Producer
 		 */
 		private boolean enable;
+
+		/**
+		 * 是否启动 transactionProducer
+		 */
+		private boolean transactionEnable;
 
 		/**
 		 * 事务消息时 很重要（将Producer进行归类）
@@ -305,6 +308,8 @@ public class RocketMqConfigProperties{
 		 * 默认值 15min
 		 */
 		private long consumeTimeout = 15;
+
+		private RocketMqConfigProperties.ConsumerThreadPool threadPool = new RocketMqConfigProperties.ConsumerThreadPool();
 
 	}
 
