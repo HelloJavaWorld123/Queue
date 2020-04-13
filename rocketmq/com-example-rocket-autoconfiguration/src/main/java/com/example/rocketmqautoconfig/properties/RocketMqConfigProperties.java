@@ -3,9 +3,7 @@ package com.example.rocketmqautoconfig.properties;
 import lombok.Data;
 import org.apache.rocketmq.client.AccessChannel;
 import org.apache.rocketmq.client.consumer.AllocateMessageQueueStrategy;
-import org.apache.rocketmq.client.consumer.MessageSelector;
 import org.apache.rocketmq.client.consumer.listener.MessageListener;
-import org.apache.rocketmq.client.consumer.store.OffsetStore;
 import org.apache.rocketmq.client.trace.TraceDispatcher;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
@@ -13,11 +11,8 @@ import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import sun.rmi.runtime.Log;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -80,8 +75,6 @@ public class RocketMqConfigProperties{
 	private RocketMqConfigProperties.Producer producer = new RocketMqConfigProperties.Producer();
 
 	private RocketMqConfigProperties.Consumer consumer = new RocketMqConfigProperties.Consumer();
-
-	private List<ConsumerSubscribeInfo> consumerSubscribeInfoList = new ArrayList<>();
 
 
 	/**
@@ -309,6 +302,12 @@ public class RocketMqConfigProperties{
 		 */
 		private long consumeTimeout = 15;
 
+		/**
+		 *
+		 * group.topic=true ：组下topic是否启用
+		 */
+		private Map<String, Map<String, Boolean>> consumerInfo = new HashMap<>();
+
 		private RocketMqConfigProperties.ConsumerThreadPool threadPool = new RocketMqConfigProperties.ConsumerThreadPool();
 
 	}
@@ -363,12 +362,5 @@ public class RocketMqConfigProperties{
 		 */
 		private int awaitTerminationForSeconds = 60;
 
-	}
-
-	@Data
-	public static class ConsumerSubscribeInfo{
-		private String topic;
-		private String tagType;
-		private String expression;
 	}
 }

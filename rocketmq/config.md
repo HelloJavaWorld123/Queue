@@ -69,6 +69,8 @@
         - CONSUMER_FROM_LAST_OFFSET
         - CONSUMER_FROM_FIRST_OFFSET
         - CONSUMER_FROM_TIMESTAMP
+- AllocateMessageQueueStrategy (消息分发策略)
+  - 
 
 #### Q&A
 - 消息的有序性?

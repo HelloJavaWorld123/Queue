@@ -1,7 +1,5 @@
 package com.example.rocketmq.common.util;
 
-import sun.rmi.runtime.Log;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 

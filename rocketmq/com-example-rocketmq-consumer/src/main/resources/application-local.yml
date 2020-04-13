@@ -1,5 +1,9 @@
 spring:
   rocketmq:
+    name-server-address: 172.16.20.190:9876;172.16.20.195:9875
+    language-code: java
+    instance-name: consumer_application
+    vip-channel-enabled: false
     consumer:
       # 必须启动 才能启动者 默认是false
       enable: true
@@ -16,20 +20,13 @@ spring:
         queue-capacity: 50
         prefix-thread-name: rocketmq_consumer_
         allow-core-thread-time-out: true
-      allocate-message-queue-strategy:
     producer:
       enable: false
       #消费者订阅信息
     consumer-subscribe-info-list:
-      - topic: TEST_CUSTOMER_TOPIC_TAG_ONE
-        tagType: tag
-        expression: TEST_CUSTOMER_TAG_ONE
-      - topic: TEST_CUSTOMER_TOPIC_TAG_TWO
-        tagType: tag
-        expression: TEST_CUSTOMER_TAG_ONE || TEST_CUSTOMER_TAG_TWO
-      - topic: TEST_CUSTOMER_TOPIC_SQL_ONE
-        tagType: sql92
-        expression: a > 9 AND b == 0
-      - topic: TEST_CUSTOMER_TOPIC_SQL_TWO
-        tagType: sql92
-        expression: a == 1 AND c < 100
+      - TEST_CUSTOMER_TOPIC_TAG_GROUP_ONE:
+          - TEST_CUSTOMER_TOPIC_TAG_ONE: true
+          - TEST_CUSTOMER_TOPIC_TAG_TWO: true
+      - TEST_CUSTOMER_TOPIC_SQL_GROUP_THREE:
+          - TEST_CUSTOMER_TOPIC_SQL_ONE: false
+          - TEST_CUSTOMER_TOPIC_SQL_TWO: true
