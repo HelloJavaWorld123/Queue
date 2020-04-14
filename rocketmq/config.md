@@ -70,6 +70,8 @@
         - CONSUMER_FROM_FIRST_OFFSET
         - CONSUMER_FROM_TIMESTAMP
 - AllocateMessageQueueStrategy (消息分发策略)
+- RemotingCommand：发送和接收的消息类
+  - 序列化类型：JSON 和 ROCKETMQ (org.apache.rocketmq.remoting.protocol.SerializeType),或者通过**rocketmq.serialize.type**进行指定
   - 
 
 #### Q&A

@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Random;
+
 /**
  * @author : RXK
  * Date : 2020/4/7 15:01
@@ -39,5 +41,18 @@ public class RocketMessageController{
 		return ResponseEntity.ok().body("ok");
 	}
 
+
+	@RequestMapping("/topic")
+	public ResponseEntity<String> sendMoreTopicMessage(){
+		String body = "测试多tag";
+		String tag = "TAG";
+		int nextInt = new Random().nextInt(100);
+		try {
+			rocketSendMessageService.sendMessage(tag+nextInt,body+nextInt);
+		} catch (InterruptedException | RemotingException | MQClientException | MQBrokerException e) {
+			return ResponseEntity.ok().body("error");
+		}
+		return ResponseEntity.ok().body("ok");
+	}
 
 }
