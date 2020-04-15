@@ -1,17 +1,1 @@
-spring:
-  rocketmq:
-    name-server-address: 172.16.20.190:9876;172.16.20.190:9875
-    heartbeat-broker-interval: 30000
-    poll-name-server-interval: 30000
-    instance-name: rocketmq_producer
-    unit-name: test
-    use-t-l-s: true
-#    name-space: test_name_space
-    producer:
-      enable: true
-      transaction-enable: false
-      producer-group: rocketmq_cluster_two
-      default-topic-queue-nums: 5
-      retry-times-when-send-async-failed: 3
-      retry-an-other-broker-when-not-store-ok: false
-      retry-times-when-send-failed: 3
+
