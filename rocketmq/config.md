@@ -72,7 +72,14 @@
 - AllocateMessageQueueStrategy (消息分发策略)
 - RemotingCommand：发送和接收的消息类
   - 序列化类型：JSON 和 ROCKETMQ (org.apache.rocketmq.remoting.protocol.SerializeType),或者通过**rocketmq.serialize.type**进行指定
-  - 
+
+#### Netty
+- RemotingServer
+
+- RemotingClient
+  - org.apache.rocketmq.remoting.netty.NettyRemotingClient 客户端启动BootStrap和通过channel发送消息的逻辑
+  - ChannelFuture的所有IO操作都是异步的。可以通过ChannelFutureListener监听Channel的状态。唯有wait方法是阻塞同步的,线程会阻塞直到IO完成.
+  - 切记不要在ChannelHandler中调用wait()方法,ChannelHandler中的IO线程操作，如果同时调用wait()方法,ChannelHandler的IO线程将会阻塞
 
 #### Q&A
 - 消息的有序性?
