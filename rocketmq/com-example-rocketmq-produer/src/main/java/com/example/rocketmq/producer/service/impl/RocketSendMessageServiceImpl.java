@@ -2,13 +2,14 @@ package com.example.rocketmq.producer.service.impl;
 
 import com.example.rocketmq.common.enums.RocketMQEnum;
 import com.example.rocketmq.common.util.LogUtils;
+import com.example.rocketmq.producer.listener.impl.TestMessageListenerProcessor;
 import com.example.rocketmq.producer.service.RocketSendMessageService;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.apache.rocketmq.client.producer.MessageQueueSelector;
 import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,12 @@ public class RocketSendMessageServiceImpl implements RocketSendMessageService{
 
 	@Autowired
 	private DefaultMQProducer defaultMQProducer;
+
+	@Autowired
+	private TransactionMQProducer transactionMQProducer;
+
+	@Autowired
+	private TestMessageListenerProcessor messageListenerProcessor;
 
 
 	@Override
@@ -52,5 +59,28 @@ public class RocketSendMessageServiceImpl implements RocketSendMessageService{
 				LogUtils.info("发送失败的结果是：{"+e+"}");
 			}
 		});
+	}
+
+    @Override
+    public void sendTransactionMessage(String msg) throws MQClientException {
+		Message message = new Message();
+		message.setBody(msg.getBytes());
+		message.setTopic(RocketMQEnum.Topic.TEST_CUSTOMER_TOPIC_SQL_TWO.name());
+		message.setTags("1111111");
+		transactionMQProducer.setTransactionListener(messageListenerProcessor);
+		transactionMQProducer.sendMessageInTransaction(message,new MessageObject());
+    }
+
+}
+
+class MessageObject{
+	private String id;
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
 	}
 }

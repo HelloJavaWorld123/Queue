@@ -4,6 +4,7 @@ import com.example.rocketmq.common.util.LogUtils;
 import com.example.rocketmqautoconfig.properties.RocketMqConfigProperties;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.SmartLifecycle;
@@ -21,47 +22,86 @@ import java.util.Objects;
 public class RocketMqProducerStartUp implements SmartLifecycle{
 
 
-	private volatile boolean start = false;
-
-	@Autowired(required = false)
-	private  DefaultMQProducer defaultMQProducer;
+	private volatile boolean producerStart = false;
+	private volatile boolean transactionStart = false;
 
 	@Autowired
 	private RocketMqConfigProperties rocketMqConfigProperties;
 
+	@Autowired(required = false)
+	private  DefaultMQProducer defaultMQProducer;
+
+	@Autowired(required = false)
+	private TransactionMQProducer transactionMQProducer;
+
 
 	@Override
 	public void start(){
-		if(!start){
+		//事务启动
+		if(!transactionStart){
+			if(rocketMqConfigProperties.getProducer().isTransactionEnable()){
+				try{
+					LogUtils.info("启动 transactionProducer 以及");
+					transactionMQProducer.start();
+					transactionStart = true;
+					LogUtils.info("启动 transactionProducer 成功");
+				} catch(MQClientException e){
+					LogUtils.error("启动transactionProducer异常:",e);
+					transactionStart = false;
+				}
+			}else{
+				startProducer();
+			}
+		}
+
+
+	}
+
+	private void startProducer() {
+		if(!producerStart){
 			try{
 				if(rocketMqConfigProperties.getProducer().isEnable()){
 					LogUtils.info("启动Producer");
 					defaultMQProducer.start();
-					start = true;
+					producerStart = true;
 					LogUtils.info("启动Producer成功");
 				}
 			} catch(MQClientException e){
 				LogUtils.error("启动 Producer 异常：", e);
-				start = false;
+				producerStart = false;
 			}
 		}
 	}
 
 	@Override
 	public void stop(){
-		if(Objects.nonNull(defaultMQProducer)){
-			if(!start){
-				LogUtils.info("启动Producer");
-				defaultMQProducer.shutdown();
-				start = false;
-			}
-		}
+
 	}
 
+	@Override
+	public void stop(Runnable callback) {
+		if(Objects.nonNull(defaultMQProducer)){
+			if(!producerStart){
+				LogUtils.info("启动Producer");
+				defaultMQProducer.shutdown();
+				producerStart = false;
+			}
+		}
+
+		if (Objects.nonNull(transactionMQProducer)) {
+			if(!transactionStart){
+				LogUtils.info("开始停止 transactionProducer");
+				transactionMQProducer.shutdown();
+				transactionStart = false;
+				LogUtils.info("停止 transactionProducer 成功");
+			}
+		}
+		callback.run();
+	}
 
 	@Override
 	public boolean isRunning(){
-		return start;
+		return producerStart || transactionStart;
 	}
 
 	@Override

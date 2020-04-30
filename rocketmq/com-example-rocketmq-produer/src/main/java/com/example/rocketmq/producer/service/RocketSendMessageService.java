@@ -13,4 +13,6 @@ public interface RocketSendMessageService{
 	void sendNormalMessage(String message) throws InterruptedException, RemotingException, MQClientException, MQBrokerException;
 
     void sendMessage(String tag, String body) throws InterruptedException, RemotingException, MQClientException, MQBrokerException;
+
+    void sendTransactionMessage(String msg) throws MQClientException;
 }

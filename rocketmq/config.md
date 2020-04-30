@@ -75,6 +75,8 @@
 
 #### Netty
 - RemotingServer
+  - serverOnewaySemaphoreValue: 利用Semaphore控制oneWay发送消息的并发量,默认值 256(公平锁)
+  - serverAsyncSemaphoreValue：利用Semaphore控制发送异步消息的并发量;默认值64(公平锁)
 
 - RemotingClient
   - org.apache.rocketmq.remoting.netty.NettyRemotingClient 客户端启动BootStrap和通过channel发送消息的逻辑

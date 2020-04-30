@@ -55,4 +55,14 @@ public class RocketMessageController{
 		return ResponseEntity.ok().body("ok");
 	}
 
+	@RequestMapping("/transac/message")
+	public ResponseEntity<String> sendTransactionMessage(){
+		try {
+			rocketSendMessageService.sendTransactionMessage("事务消息");
+		} catch (MQClientException e) {
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok("发送成功");
+	}
+
 }

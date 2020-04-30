@@ -36,7 +36,7 @@ public class RocketMqAutoConfig{
 	}
 
 
-	@Bean
+	@Bean("defaultMQProducer")
 	@ConditionalOnProperty(prefix = "spring.rocketmq",value = "producer.enable",
 	                       matchIfMissing = false)
 	@SuppressWarnings("uncheck")
@@ -51,7 +51,7 @@ public class RocketMqAutoConfig{
 
 
 	@Bean(name = "transactionMqProducer")
-	@ConditionalOnProperty(prefix = "spring.rocketmq",value = "producer.transactionEnable",
+	@ConditionalOnProperty(prefix = "spring.rocketmq",value = "producer.transaction-enable",
 	                       matchIfMissing = false)
 	public TransactionMQProducer transactionMqProducer(){
 		TransactionMQProducer transactionMqProducer = new TransactionMQProducer();
